@@ -75,7 +75,9 @@ export class AppointmentsService {
 
   async findOne(id: string): Promise<Appointment> {
     try {
-      const appointment = await this.appointmentModel.findById(id).populate({
+      let options = {} as any;
+      options.deleted = false;
+      const appointment = await this.appointmentModel.findById(id, options).populate({
         path: 'updatedBy',
         select: '_id firstname lastname username',
         model: 'User'
@@ -140,17 +142,17 @@ export class AppointmentsService {
         model: 'User'
       })
       .exec();
-  
+
     if (!appointment) {
       throw new HttpException(
         `Could not find appointment with id ${id}`,
         HttpStatus.NOT_FOUND,
       );
     }
-  
+
     return appointment;
   }
-  
+
 
   /**
    * Reads a mongo database error and attempts to provide a better error message. If
