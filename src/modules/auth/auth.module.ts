@@ -10,12 +10,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
   imports: [
     forwardRef(() => UsersModule),
     
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async function (configService: ConfigService) {
-        return { secret: configService.get<string>('API.token_secret'), }
-      },
-      inject: [ConfigService],
+    JwtModule.register({
+      global: true,
+      secret: 'c2qazeafezdzDEF8F8EZZOXIlcHPArhZwZgH159Aezcz7s0cq8Lqcd7bGcVluZ4ZFDSFGMMPDWW3zeFzez6w035cDdq9DvXHhQmDrJlYzWdlcu5WB6m9taTa5PMpKKyqvW8cXVmG7F4',
+      signOptions: { expiresIn: '60s' },
     }),
     ConfigModule
   ],
