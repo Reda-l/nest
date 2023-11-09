@@ -36,18 +36,23 @@ export class AppointmentsController {
     return this.appointmentsService.findAll(query);
   }
 
+  @UseGuards(AuthJwtAuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.appointmentsService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    return await this.appointmentsService.findOne(id);
   }
 
+  @UseGuards(AuthJwtAuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAppointmentDto: UpdateAppointmentDto) {
-    return this.appointmentsService.update(+id, updateAppointmentDto);
+  update(@Param('id') id: string, @Body() updateAppointmentDto: UpdateAppointmentDto, @Request() request) {
+    const authenticated = request.user
+    return this.appointmentsService.update(id, updateAppointmentDto,authenticated);
   }
 
+  @UseGuards(AuthJwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.appointmentsService.remove(+id);
+  remove(@Param('id') id: string,@Request() request) {
+    const authenticated = request.user
+    return this.appointmentsService.remove(id,authenticated);
   }
 }
