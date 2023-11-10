@@ -21,4 +21,8 @@ export class CreateServiceDto {
     @IsString()
     @IsUrl()
     image: string;
+
+    @ApiProperty()
+    @IsString()
+    type: string;
 }

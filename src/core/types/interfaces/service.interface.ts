@@ -4,4 +4,5 @@ export class Service extends Document {
     title: string;
     slug: string;
     image?: string;
+    type : string;
 }
