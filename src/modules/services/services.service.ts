@@ -14,7 +14,7 @@ export class ServicesService {
   async create(createServiceDto: CreateServiceDto): Promise<Service | undefined> {
     try {
       // Generate slug from the name
-      const slug = createServiceDto.name.toLowerCase().replace(/ /g, '_');
+      const slug = createServiceDto.name.toLowerCase().replace(/[^\w\s]/gi, '').replace(/ /g, '_');
       // Add the slug to the DTO
       createServiceDto.slug = slug;
 

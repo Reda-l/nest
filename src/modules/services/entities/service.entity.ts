@@ -5,7 +5,9 @@ const serviceSchema = new mongoose.Schema({
     slug: { type: String }, // name with _ and lowerCase
     price: { type: Number },
     image: { type: String },
-    type : {type : String}
+    type : {type : String},
+    time : { type: Number },
+    description: { type: [String] } // Array of strings for description
 },
     {
         timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

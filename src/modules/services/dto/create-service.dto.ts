@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsString, IsUrl } from "class-validator";
+import { IsArray, IsNotEmpty, IsNumber, IsString, IsUrl } from "class-validator";
 
 export class CreateServiceDto {
 
@@ -14,6 +14,11 @@ export class CreateServiceDto {
     price: number;
 
     @ApiProperty()
+    @IsNumber()
+    @IsNotEmpty()
+    time: number;
+
+    @ApiProperty()
     @IsString()
     slug?: string;
 
@@ -25,4 +30,9 @@ export class CreateServiceDto {
     @ApiProperty()
     @IsString()
     type: string;
+    
+    @ApiProperty()
+    @IsArray()
+    @IsString({ each: true })
+    description: string[];
 }
