@@ -7,32 +7,74 @@ import { Appointment } from 'src/core/types/interfaces/appointment.interface';
 import { UsersService } from '../users/users.service';
 import { EmailService } from 'src/core/shared/email.service';
 import { User } from 'src/core/types/interfaces/user.interface';
+import { Service } from 'src/core/types/interfaces/service.interface';
 
 @Injectable()
 export class AppointmentsService {
   constructor(
     @InjectModel('Appointment') public readonly appointmentModel: Model<Appointment>,
+    @InjectModel('Service') public readonly serviceModel: Model<Service>,
     private userService: UsersService,
     private emailService: EmailService
   ) { }
   async create(createAppointmentDto: CreateAppointmentDto): Promise<Appointment | undefined> {
     try {
-      // save the appointment record
+      // Assuming createAppointmentDto.reservations is an array now
+      const reservations = createAppointmentDto.reservations.map(async (reservation) => {
+        try {
+          // Check if the service with the given ID exists
+          const serviceExists = await this.serviceModel.exists({ _id: reservation.service });
+
+          if (!serviceExists) {
+            throw new HttpException(`Service with ID ${reservation.service} does not exist`, HttpStatus.NOT_FOUND);
+          }
+
+          return {
+            gender: reservation.gender,
+            service: reservation.service,
+            fullname: reservation.fullname
+          };
+        } catch (error) {
+          // Catch the specific error related to ObjectId casting failure
+          if (error.message.includes('Cast to ObjectId failed')) {
+            throw new HttpException(`Invalid service ID format: ${reservation.service}`, HttpStatus.BAD_REQUEST);
+          }
+          throw error;
+        }
+      });
+
+      // Resolve the promises
+      const resolvedReservations = await Promise.all(reservations);
+
+      // Save the appointment record
       const appointment = await this.appointmentModel.create({
         date: createAppointmentDto.date,
         time: createAppointmentDto.time,
-        reservation: createAppointmentDto.reservation,
+        reservations: resolvedReservations,
         bookingPersonDetails: createAppointmentDto.bookingPersonDetails,
         status: createAppointmentDto.status
       });
-      if (appointment)
-        // send email
-        await this.emailService.sendEmail(['mazraoui.1996@gmail.com', appointment.reservation.email], 'Test Email');
-      return appointment;
+
+      // Populate the 'service' field in the 'reservations' array
+      const populatedAppointment = await this.appointmentModel
+        .findById(appointment._id)
+        .populate({
+          path: 'reservations.service',
+          model: 'Service'
+        });
+
+      if (populatedAppointment) {
+        // Send email
+        const bookingPersonEmail = createAppointmentDto.bookingPersonDetails.email;
+        await this.emailService.sendEmail([bookingPersonEmail], 'Test Email');
+      }
+
+      return populatedAppointment;
     } catch (error) {
       throw this.evaluateMongoError(error, createAppointmentDto);
     }
   }
+
 
   // function to get all appointments
   async findAll(options): Promise<any> {
@@ -58,6 +100,10 @@ export class AppointmentsService {
     const data = await query
       .skip((page - 1) * count)
       .limit(count)
+      .populate({
+        path: 'reservations.service',
+        model: 'Service'
+      })
       .exec();
 
     return {
@@ -77,12 +123,18 @@ export class AppointmentsService {
     try {
       let options = {} as any;
       options.deleted = false;
-      const appointment = await this.appointmentModel.findById(id, options).populate({
-        path: 'updatedBy',
-        select: '_id firstname lastname username',
-        model: 'User'
-      }).exec();
-
+      const appointment = await this.appointmentModel
+        .findById(id, options)
+        .populate({
+          path: 'updatedBy',
+          select: '_id firstname lastname username',
+          model: 'User'
+        })
+        .populate({
+          path: 'reservations.service',
+          model: 'Service'
+        })
+        .exec();
       if (!appointment) {
         throw new HttpException(
           `Could not find appointment with id ${id}`,

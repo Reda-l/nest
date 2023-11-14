@@ -6,11 +6,11 @@ const appointmentSchema = new mongoose.Schema({
     date: { type: Date }, // Date of the appointment
     time: { type: String }, // Time of the appointment
 
-    reservation: {
-        gender: { type: String, required: false }, // Gender of the reservation (e.g., "male", "female", etc.)
-        service: { type: String, required: false }, // Service being reserved for the appointment
-        fullname: { type: String, required: false } // Full name for the reservation
-    },
+    reservations: [{
+        gender: { type: String, required: false },
+        service: { type: mongoose.Schema.Types.ObjectId, ref: 'Service', required: true },
+        fullname: { type: String, required: false }
+    }],
     
 
     bookingPersonDetails: {

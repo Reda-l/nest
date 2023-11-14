@@ -5,11 +5,12 @@ import { appointmentSchema } from './entities/appointment.entity';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from '../users/users.module';
 import { EmailService } from 'src/core/shared/email.service';
+import { serviceSchema } from '../services/entities/service.entity';
 
 @Module({
   imports: [
     forwardRef(() => UsersModule),
-    MongooseModule.forFeature([{ name: "Appointment", schema: appointmentSchema },
+    MongooseModule.forFeature([{ name: "Appointment", schema: appointmentSchema },{ name: "Service", schema: serviceSchema }
     ]),
   ],
   controllers: [AppointmentsController],

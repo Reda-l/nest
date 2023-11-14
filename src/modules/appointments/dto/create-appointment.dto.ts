@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional, IsObject } from "class-validator";
+import { IsOptional, IsObject, IsArray } from "class-validator";
 
 // DTO for appointment creation
 export class CreateAppointmentDto {
@@ -11,8 +11,8 @@ export class CreateAppointmentDto {
     time: string;
     @ApiProperty()
     @IsOptional()
-    @IsObject()
-    reservation?: any;
+    @IsArray()
+    reservations?: any;
     @ApiProperty()
     @IsOptional()
     @IsObject()
