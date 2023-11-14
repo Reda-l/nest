@@ -79,7 +79,7 @@ export class UsersService {
     let options = {} as any;
     options.deleted = false;
 
-    let user = this.userModel.findById(id, options);
+    let user = this.userModel.findById(id, options).select(['-password','-createdBy','-address']);
     const doesUserExit = this.userModel.exists({ _id: id });
 
     return doesUserExit

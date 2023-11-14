@@ -29,7 +29,16 @@ export class AuthController {
 
       const token = await this.authService.signPayload(payload);
       const userRO = {
-        user: user,
+        user: {
+          _id: user._id,
+          username: user.username,
+          firstname: user.firstname,
+          lastname: user.lastname,
+          email: user.email,
+          imageUrl: user.imageUrl,
+          phoneNumber : user.phoneNumber,
+          lastLoginAt: user.lastLoginAt
+        },
         accessToken: token,
       }
       return userRO;
@@ -41,6 +50,14 @@ export class AuthController {
   @UseGuards(AuthJwtAuthGuard)
   @Get('me')
   async findMe(@Request() req) {
-     return req.user
+    return {
+      _id: req.user._id,
+      username: req.user.username,
+      firstname: req.user.firstname,
+      lastname: req.user.lastname,
+      email: req.user.email,
+      imageUrl: req.user.imageUrl,
+      lastLoginAt: req.user.lastLoginAt
+    }
   }
 }
