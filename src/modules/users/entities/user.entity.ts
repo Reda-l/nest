@@ -52,17 +52,10 @@ const UsersSchema = new mongoose.Schema(
             default: GENDER_OPTIONS.MALE,
             required: true,
         },
-        address: {
-            city: { type: String, required: false },
-            state: { type: String, required: false },
-            line1: { type: String, required: false },
-            line2: { type: String, required: false },
-            zipCode: { type: String, required: false },
-        },
+
 
         lastLoginAt: { type: Date, required: false },
         lastLogoutAt: { type: Date, required: false },
-        createdBy: { type: [MongooseSchema.Types.ObjectId], ref: 'User' },
         emailVerified: { type: Boolean, default: false, required: false },
         internalComments: { type: String, required: false },
 

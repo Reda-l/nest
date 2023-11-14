@@ -56,18 +56,6 @@ export class CreateUserDto {
     @IsString()
     imageUrl?: string;
 
-
-    @ApiProperty()
-    @IsOptional()
-    @IsObject()
-    address?: {
-        zipCode: string;
-        city: string;
-        line1: string;
-        line2: string;
-        state: string;
-    };
-
     @ApiProperty()
     @IsOptional()
     @IsBoolean()

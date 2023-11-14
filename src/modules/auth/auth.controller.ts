@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, Request, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { UsersService } from '../users/users.service';
+import { AuthJwtAuthGuard } from 'src/core/guards/auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -35,5 +36,11 @@ export class AuthController {
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  @UseGuards(AuthJwtAuthGuard)
+  @Get('me')
+  async findMe(@Request() req) {
+     return req.user
   }
 }
