@@ -60,7 +60,8 @@ export class AppointmentsService {
         .findById(appointment._id)
         .populate({
           path: 'reservations.service',
-          model: 'Service'
+          model: 'Service',
+          select: '-deleted -created_at -updated_at -__v'
         });
 
       if (populatedAppointment) {
@@ -102,7 +103,8 @@ export class AppointmentsService {
       .limit(count)
       .populate({
         path: 'reservations.service',
-        model: 'Service'
+        model: 'Service',
+        select: '-deleted -created_at -updated_at -__v'
       })
       .exec();
 
@@ -132,7 +134,8 @@ export class AppointmentsService {
         })
         .populate({
           path: 'reservations.service',
-          model: 'Service'
+          model: 'Service',
+          select: '-deleted -created_at -updated_at -__v'
         })
         .exec();
       if (!appointment) {
