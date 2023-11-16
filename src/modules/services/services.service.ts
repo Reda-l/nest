@@ -24,42 +24,48 @@ export class ServicesService {
 
   async findAll(options): Promise<any> {
     options.filter.deleted = false;
-    const query = this.serviceModel.find(options.filter);
 
-    if (options.sort) {
-      query.sort(options.sort);
-    }
+    // Aggregation pipeline to group by type and include specified fields
+    const aggregationPipeline: any[] = [
+        { $match: options.filter },
+        {
+            $group: {
+                _id: "$type",
+                data: { $push: "$$ROOT" },
+                count: { $sum: 1 },
+            }
+        },
+        { $sort: { _id: 1 } },
+        {
+            $project: {
+                _id: 1,
+                data: {
+                    $map: {
+                        input: "$data",
+                        as: "doc",
+                        in: {
+                            _id: "$$doc._id",
+                            name: "$$doc.name",
+                            price: "$$doc.price",
+                            image: "$$doc.image",
+                            type: "$$doc.type",
+                            description: "$$doc.description",
+                        },
+                    },
+                },
+                count: 1,
+            },
+        },
+    ];
 
-    if (options.select && options.select !== '') {
-      query.select(options.select);
-    }
-
-    const page: number = parseInt(options.page as any) || 1;
-    const limit: number = parseInt(options.limit as any) || 10;
-    const total = await this.serviceModel.countDocuments(options.filter);
-    const count = total < limit ? total : limit;
-    const lastPage = Math.max(Math.ceil(total / limit), 1);
-    const startIndex = (page - 1) * count;
-    const endIndex = Math.min(count * page, count);
-
-    const data = await query
-      .skip((page - 1) * count)
-      .limit(count)
-      .select('-deleted -created_at -updated_at -__v')
-      .exec();
+    const groupedData = await this.serviceModel.aggregate(aggregationPipeline).exec();
 
     return {
-      data,
-      count,
-      total,
-      lastPage,
-      startIndex,
-      endIndex,
-      page,
-
-      pageCount: Math.ceil(total / limit),
+        groupedData,
     };
-  }
+}
+
+
 
   async findOne(id: string): Promise<Service> {
     try {
