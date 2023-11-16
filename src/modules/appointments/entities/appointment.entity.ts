@@ -7,7 +7,10 @@ const appointmentSchema = new mongoose.Schema({
     time: { type: String }, // Time of the appointment
 
     reservations: [{
-        gender: { type: String, required: false },
+        gender: {
+            id: { type: String, required: false },
+            name: { type: String, required: false }
+        },
         service: { type: mongoose.Schema.Types.ObjectId, ref: 'Service', required: true },
         fullname: { type: String, required: false }
     }],

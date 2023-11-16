@@ -20,10 +20,6 @@ export class CreateServiceDto {
 
     @ApiProperty()
     @IsString()
-    slug?: string;
-
-    @ApiProperty()
-    @IsString()
     @IsUrl()
     image: string;
 

@@ -23,9 +23,10 @@ export class ServicesController {
     return this.servicesService.findAll(query);
   }
 
+  @UseGuards(AuthJwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.servicesService.findOne(+id);
+    return this.servicesService.findOne(id);
   }
   
   @UseGuards(AuthJwtAuthGuard)

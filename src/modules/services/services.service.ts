@@ -13,11 +13,6 @@ export class ServicesService {
 
   async create(createServiceDto: CreateServiceDto): Promise<Service | undefined> {
     try {
-      // Generate slug from the name
-      const slug = createServiceDto.name.toLowerCase().replace(/[^\w\s]/gi, '').replace(/ /g, '_');
-      // Add the slug to the DTO
-      createServiceDto.slug = slug;
-
       // Save the service record
       const service = await this.serviceModel.create(createServiceDto);
       return service;
@@ -50,6 +45,7 @@ export class ServicesService {
     const data = await query
       .skip((page - 1) * count)
       .limit(count)
+      .select('-deleted -created_at -updated_at -__v')
       .exec();
 
     return {
@@ -65,16 +61,30 @@ export class ServicesService {
     };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} service`;
+  async findOne(id: string): Promise<Service> {
+    try {
+      let options = {} as any;
+      options.deleted = false;
+      const service = await this.serviceModel
+        .findById(id, options)
+        .select('-deleted -created_at -updated_at -__v')
+        .exec();
+      if (!service) {
+        throw new HttpException(
+          `Could not find service with id ${id}`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      return service;
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
   }
+
 
   async update(id: string, updateServiceDto: UpdateServiceDto) {
     try {
-      // Check if 'name' field is being updated
-      if (updateServiceDto.name) {
-        updateServiceDto.slug = updateServiceDto.name.toLowerCase().replace(/ /g, '_');
-      }
       const updatedService = await this.serviceModel.findByIdAndUpdate(id, updateServiceDto, { new: true });
 
       if (!updatedService) {
