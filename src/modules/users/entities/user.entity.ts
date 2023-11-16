@@ -64,8 +64,7 @@ const UsersSchema = new mongoose.Schema(
         imageUrl: {
             type: String,
             required: false,
-            default:
-                'https://firebasestorage.googleapis.com/v0/b/coleads-903c0.appspot.com/o/royaume%20du%20maroc%20kingdom%20of%20morocco%20seeklogo.png?alt=media&token=caeb08c4-10dc-4893-af21-a2747cad5ab9',
+            default: null
         },
     },
     {
