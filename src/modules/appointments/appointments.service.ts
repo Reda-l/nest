@@ -19,38 +19,13 @@ export class AppointmentsService {
   ) { }
   async create(createAppointmentDto: CreateAppointmentDto): Promise<Appointment | undefined> {
     try {
-      // Assuming createAppointmentDto.reservations is an array now
-      const reservations = createAppointmentDto.reservations.map(async (reservation) => {
-        try {
-          // Check if the service with the given ID exists
-          const serviceExists = await this.serviceModel.exists({ _id: reservation.service });
-
-          if (!serviceExists) {
-            throw new HttpException(`Service with ID ${reservation.service} does not exist`, HttpStatus.NOT_FOUND);
-          }
-
-          return {
-            gender: reservation.gender,
-            service: reservation.service,
-            fullname: reservation.fullname
-          };
-        } catch (error) {
-          // Catch the specific error related to ObjectId casting failure
-          if (error.message.includes('Cast to ObjectId failed')) {
-            throw new HttpException(`Invalid service ID format: ${reservation.service}`, HttpStatus.BAD_REQUEST);
-          }
-          throw error;
-        }
-      });
-
-      // Resolve the promises
-      const resolvedReservations = await Promise.all(reservations);
+      
 
       // Save the appointment record
       const appointment = await this.appointmentModel.create({
         date: createAppointmentDto.date,
         time: createAppointmentDto.time,
-        reservations: resolvedReservations,
+        reservations: createAppointmentDto.reservations,
         bookingPersonDetails: createAppointmentDto.bookingPersonDetails,
         status: createAppointmentDto.status
       });
@@ -58,11 +33,11 @@ export class AppointmentsService {
       // Populate the 'service' field in the 'reservations' array
       const populatedAppointment = await this.appointmentModel
         .findById(appointment._id)
-        .populate({
-          path: 'reservations.service',
-          model: 'Service',
-          select: '-deleted -created_at -updated_at -__v'
-        });
+        // .populate({
+        //   path: 'reservations.services',
+        //   model: 'Service',
+        //   select: '-deleted -created_at -updated_at -__v'
+        // });
 
       if (populatedAppointment) {
         // Send email
@@ -72,6 +47,7 @@ export class AppointmentsService {
 
       return populatedAppointment;
     } catch (error) {
+      console.log("🚀 ~ file: appointments.service.ts:75 ~ AppointmentsService ~ create ~ error:", error)
       throw this.evaluateMongoError(error, createAppointmentDto);
     }
   }
@@ -101,11 +77,11 @@ export class AppointmentsService {
     const data = await query
       .skip((page - 1) * count)
       .limit(count)
-      .populate({
-        path: 'reservations.service',
-        model: 'Service',
-        select: '-deleted -created_at -updated_at -__v'
-      })
+      // .populate({
+      //   path: 'reservations.services',
+      //   model: 'Service',
+      //   select: '-deleted -created_at -updated_at -__v'
+      // })
       .exec();
 
     return {
@@ -132,11 +108,11 @@ export class AppointmentsService {
           select: '_id firstname lastname username',
           model: 'User'
         })
-        .populate({
-          path: 'reservations.service',
-          model: 'Service',
-          select: '-deleted -created_at -updated_at -__v'
-        })
+        // .populate({
+        //   path: 'reservations.services',
+        //   model: 'Service',
+        //   select: '-deleted -created_at -updated_at -__v'
+        // })
         .exec();
       if (!appointment) {
         throw new HttpException(
