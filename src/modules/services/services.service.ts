@@ -49,6 +49,7 @@ export class ServicesService {
                             price: "$$doc.price",
                             image: "$$doc.image",
                             type: "$$doc.type",
+                            time: "$$doc.time",
                             description: "$$doc.description",
                         },
                     },
