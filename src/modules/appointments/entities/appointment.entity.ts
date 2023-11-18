@@ -11,10 +11,19 @@ const appointmentSchema = new mongoose.Schema({
             id: { type: String, required: false },
             name: { type: String, required: false }
         },
-        service: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Service', required: true }],
+        service: [
+            {
+                name: { type: String },
+                price: { type: Number },
+                image: { type: String },
+                type: { type: String },
+                time: { type: Number },
+                description: { type: [String] }
+            }
+        ],
         fullname: { type: String, required: false }
     }],
-    
+
 
     bookingPersonDetails: {
         fullname: { type: String, required: false }, // Full name of the person booking the appointment
@@ -23,7 +32,7 @@ const appointmentSchema = new mongoose.Schema({
         message: { type: String, required: false } // Additional message or notes related to the booking
     },
 
-    updatedBy: { type: MongooseSchema.Types.ObjectId, ref: 'User', default : null }, // User who updated the Appointment
+    updatedBy: { type: MongooseSchema.Types.ObjectId, ref: 'User', default: null }, // User who updated the Appointment
     status: {
         type: String,
         enum: APPOINTMENT_STATUS_OPTIONS,
