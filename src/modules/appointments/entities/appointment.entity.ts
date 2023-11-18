@@ -11,8 +11,9 @@ const appointmentSchema = new mongoose.Schema({
             id: { type: String, required: false },
             name: { type: String, required: false }
         },
-        service: [
+        services: [
             {
+                _id: { type: String },
                 name: { type: String },
                 price: { type: Number },
                 image: { type: String },
