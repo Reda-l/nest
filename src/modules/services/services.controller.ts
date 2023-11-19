@@ -15,7 +15,7 @@ export class ServicesController {
     return this.servicesService.create(createServiceDto);
   }
 
-  @UseGuards(AuthJwtAuthGuard)
+  // @UseGuards(AuthJwtAuthGuard)
   @Get()
   findAll(@Request() request, @Req() req: ReqOptions) {
     let query = req.query.s ? JSON.parse(req.query.s as string) : {};
@@ -23,7 +23,7 @@ export class ServicesController {
     return this.servicesService.findAll(query);
   }
 
-  @UseGuards(AuthJwtAuthGuard)
+  // @UseGuards(AuthJwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.servicesService.findOne(id);

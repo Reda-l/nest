@@ -10,7 +10,7 @@ import { AuthJwtAuthGuard } from 'src/core/guards/auth.guard';
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService, private emailService: EmailService) { }
 
-  @UseGuards(AuthJwtAuthGuard)
+  // @UseGuards(AuthJwtAuthGuard)
   @Post()
   async create(@Body() createAppointmentDto: CreateAppointmentDto) {
     return await this.appointmentsService.create(createAppointmentDto);
