@@ -21,7 +21,7 @@ export class AppointmentsController {
   async sendExampleEmail() {
     try {
       console.log('SEND EMAIL')
-      await this.emailService.sendEmail('mazraoui.1996@gmail.com', 'Test Email');
+      // await this.emailService.sendEmail('mazraoui.1996@gmail.com', 'Test Email');
       return { message: 'Email sent successfully' };
     } catch (error) {
       return { message: 'Failed to send email' };

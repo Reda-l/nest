@@ -4,7 +4,7 @@ export class Appointment extends Document {
     _id?: string;
     date: Date;
     time: string;
-    reservation: any;
+    reservations: any;
     bookingPersonDetails: any;
     createdBy? : any
 }

@@ -19,7 +19,7 @@ export class AppointmentsService {
   ) { }
   async create(createAppointmentDto: CreateAppointmentDto): Promise<Appointment | undefined> {
     try {
-      
+
 
       // Save the appointment record
       const appointment = await this.appointmentModel.create({
@@ -29,23 +29,25 @@ export class AppointmentsService {
         bookingPersonDetails: createAppointmentDto.bookingPersonDetails,
         status: createAppointmentDto.status
       });
+      
 
-      // Populate the 'service' field in the 'reservations' array
-      const populatedAppointment = await this.appointmentModel
-        .findById(appointment._id)
-        // .populate({
-        //   path: 'reservations.services',
-        //   model: 'Service',
-        //   select: '-deleted -created_at -updated_at -__v'
-        // });
-
-      if (populatedAppointment) {
+      if (appointment) {
         // Send email
         const bookingPersonEmail = createAppointmentDto.bookingPersonDetails.email;
-        await this.emailService.sendEmail([bookingPersonEmail], 'Test Email');
+        const adminEmails = ['mazraoui.1996@gmail.com','laarissareda@gmail.com']
+        const context = {
+          fullName: appointment.reservations[0].fullname,
+          date: appointment.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+          time: appointment.time,
+          id: appointment._id,
+      };
+      // send email to admins
+        await this.emailService.sendEmail(adminEmails, 'New Appointment Received', 'admin-confirmation', context);
+      // send email to clients
+      await this.emailService.sendEmail(bookingPersonEmail, 'Your Appointment Confirmation', 'client-confirmation', context);
       }
 
-      return populatedAppointment;
+      return appointment;
     } catch (error) {
       console.log("🚀 ~ file: appointments.service.ts:75 ~ AppointmentsService ~ create ~ error:", error)
       throw this.evaluateMongoError(error, createAppointmentDto);

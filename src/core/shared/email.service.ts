@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
-import * as Mailgen from 'mailgen'
+import * as handlebars from 'nodemailer-express-handlebars';
+import * as path from 'path';
+
 @Injectable()
 export class EmailService {
     private transporter: nodemailer.Transporter;
-    private mailGenerator: Mailgen;
 
     constructor() {
         this.transporter = nodemailer.createTransport({
@@ -14,44 +15,31 @@ export class EmailService {
                 pass: 'nohn grsa qyis nwdm',
             },
         });
+        const templatesPath = path.join('src', 'templates'); // Adjust the path based on your project structure
 
-        // Initialize Mailgen
-        this.mailGenerator = new Mailgen({
-            theme: 'default',
-            product: {
-                name: 'SPA de Mazraoui',
-                link: 'https://yourapp.com/',
-                // logo: 'https://yourapp.com/logo.png', // Optionally, provide a logo
-            },
-        });
+        // Set up handlebars as the template engine
+        this.transporter.use(
+            'compile',
+            handlebars({
+                viewEngine: {
+                    extName: '.hbs',
+                    partialsDir: path.join(templatesPath, 'partials'),
+                    layoutsDir: path.join(templatesPath, 'layouts'),
+                    defaultLayout: false,
+                },
+                viewPath: templatesPath,
+                extName: '.hbs',
+            })
+        );
     }
 
-    async sendEmail(to: string | string[], subject: string): Promise<void> {
-        // Create Mailgen email content
-        const email = {
-            body: {
-                name: 'Mohammed Mazraoui',
-                intro: 'Welcome to our SPA ! We\'re very excited to have you on board.',
-                action: {
-                    instructions: 'Please take an action, Confirm your appointement or it will be canceled automatically withing the next 48h',
-                    button: {
-                        color: '#22BC66',
-                        text: 'Confirm your appointment',
-                        link: 'https://frontEnd/confirm?s=d9729feb74992cc3482b350163a1a010'
-                    }
-                },
-                outro: 'Need help, or have questions? Just reply to this email, we\'d love to help.'
-            }
-        };
-
-        // Generate the HTML email using Mailgen
-        const emailBody = this.mailGenerator.generate(email);
-
+    async sendEmail(to: string | string[], subject: string,template: string,context : any): Promise<void> {
         const mailOptions: nodemailer.SendMailOptions = {
             from: 'reda9868@gmail.com',
-            to: Array.isArray(to) ? to.join(', ') : to, // Handle both single and multiple email addresses,
+            to: Array.isArray(to) ? to.join(', ') : to,
             subject,
-            html: emailBody,
+            template,
+            context
         };
 
         try {
