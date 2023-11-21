@@ -29,22 +29,22 @@ export class AppointmentsService {
         bookingPersonDetails: createAppointmentDto.bookingPersonDetails,
         status: createAppointmentDto.status
       });
-      
+
 
       if (appointment) {
         // Send email
         const bookingPersonEmail = createAppointmentDto.bookingPersonDetails.email;
-        const adminEmails = ['mazraoui.1996@gmail.com','laarissareda@gmail.com']
+        const adminEmails = ['mazraoui.1996@gmail.com', 'laarissareda@gmail.com']
         const context = {
           fullName: appointment.bookingPersonDetails.fullname,
           date: appointment.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
           time: appointment.time,
           id: appointment._id,
-      };
-      // send email to admins
+        };
+        // send email to admins
         await this.emailService.sendEmail(adminEmails, 'New Appointment Received', 'admin-confirmation', context);
-      // send email to clients
-      await this.emailService.sendEmail(bookingPersonEmail, 'Your Appointment Confirmation', 'client-confirmation', context);
+        // send email to clients
+        await this.emailService.sendEmail(bookingPersonEmail, 'Your Appointment Confirmation', 'client-confirmation', context);
       }
 
       return appointment;
@@ -132,6 +132,9 @@ export class AppointmentsService {
 
   async update(id: string, updateAppointmentDto: UpdateAppointmentDto, authenticatedUser?: User): Promise<Appointment | undefined> {
     if (Object.entries(updateAppointmentDto).length > 0) {
+      // Check if the status is set to 'CANCELED'
+      const isCanceled = updateAppointmentDto.status === 'CANCELED';
+
       const appointment = await this.appointmentModel
         .findByIdAndUpdate(id, { ...updateAppointmentDto, updatedBy: authenticatedUser?._id }, { new: true })
         .populate({
@@ -147,6 +150,18 @@ export class AppointmentsService {
           HttpStatus.NOT_FOUND,
         );
       }
+
+      // If the status is set to 'CANCELED', send an email
+    if (isCanceled) {
+      const bookingPersonEmail = appointment.bookingPersonDetails.email;
+      const emailSubject = 'Canceled Appointment';
+      const emailTemplate = 'cancel-appointment';
+      const context = { 
+        fullName: appointment.bookingPersonDetails.fullname,
+      }; // Add any additional data needed for the email template
+
+      await this.emailService.sendEmail(bookingPersonEmail, emailSubject, emailTemplate, context);
+    }
 
       return appointment;
     } else {
