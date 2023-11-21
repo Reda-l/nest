@@ -36,7 +36,7 @@ export class AppointmentsService {
         const bookingPersonEmail = createAppointmentDto.bookingPersonDetails.email;
         const adminEmails = ['mazraoui.1996@gmail.com','laarissareda@gmail.com']
         const context = {
-          fullName: appointment.reservations[0].fullname,
+          fullName: appointment.bookingPersonDetails.fullname,
           date: appointment.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
           time: appointment.time,
           id: appointment._id,
