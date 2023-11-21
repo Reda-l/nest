@@ -11,8 +11,8 @@ export class EmailService {
         this.transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: 'reda9868@gmail.com',
-                pass: 'nohn grsa qyis nwdm',
+                user: 'spadesepices@gmail.com',
+                pass: 'olwq kyrd wkcp bivn',
             },
         });
         const templatesPath = path.join('src', 'templates'); // Adjust the path based on your project structure
@@ -35,7 +35,7 @@ export class EmailService {
 
     async sendEmail(to: string | string[], subject: string,template: string,context : any): Promise<void> {
         const mailOptions: nodemailer.SendMailOptions = {
-            from: 'contact@spadesepices.com',
+            from: 'spadesepices@gmail.com',
             to: Array.isArray(to) ? to.join(', ') : to,
             subject,
             template,
