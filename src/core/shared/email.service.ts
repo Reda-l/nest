@@ -35,7 +35,7 @@ export class EmailService {
 
     async sendEmail(to: string | string[], subject: string,template: string,context : any): Promise<void> {
         const mailOptions: nodemailer.SendMailOptions = {
-            from: 'reda9868@gmail.com',
+            from: 'contact@spadesepices.com',
             to: Array.isArray(to) ? to.join(', ') : to,
             subject,
             template,
