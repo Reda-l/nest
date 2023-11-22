@@ -1,7 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, Request, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import { UsersService } from '../users/users.service';
 import { AuthJwtAuthGuard } from 'src/core/guards/auth.guard';
 
@@ -59,5 +57,17 @@ export class AuthController {
       imageUrl: req.user.imageUrl,
       lastLoginAt: req.user.lastLoginAt
     }
+  }
+
+  @UseGuards(AuthJwtAuthGuard)
+  @Post('refresh-token')
+  async refreshToken(@Request() req) {
+    const payload = {
+      username: req.user.username,
+      role: req.user.ROLE,
+    };
+    // Generate and return a new access token
+    const accessToken = await this.authService.signPayload(payload);
+    return { accessToken };
   }
 }

@@ -17,8 +17,8 @@ export class AuthService {
   ) { }
 
   async signPayload(payload) {
-    const expirationTime = 60 * 60 * 6; // 6 hours in seconds
-    // Sign the payload with a 6-hour expiration time
+    const expirationTime = 60 * 60 * 24 * 30; // 1 month in seconds
+    // Sign the payload with a 1-month expiration time
     return this.jwtService.sign(payload, { expiresIn: expirationTime });
   }
 
