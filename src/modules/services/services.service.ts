@@ -25,46 +25,89 @@ export class ServicesService {
   async findAll(options): Promise<any> {
     options.filter.deleted = false;
 
-    // Aggregation pipeline to group by type and include specified fields
-    const aggregationPipeline: any[] = [
-        { $match: options.filter },
-        {
-            $group: {
-                _id: "$type",
-                data: { $push: "$$ROOT" },
-                count: { $sum: 1 },
-            }
-        },
-        { $sort: { _id: 1 } },
-        {
-            $project: {
-                _id: 1,
-                data: {
-                    $map: {
-                        input: "$data",
-                        as: "doc",
-                        in: {
-                            _id: "$$doc._id",
-                            name: "$$doc.name",
-                            price: "$$doc.price",
-                            image: "$$doc.image",
-                            type: "$$doc.type",
-                            time: "$$doc.time",
-                            description: "$$doc.description",
-                        },
-                    },
-                },
-                count: 1,
-            },
-        },
-    ];
+    const query = this.serviceModel.find(options.filter).sort({ created_at: 1 });
 
-    const groupedData = await this.serviceModel.aggregate(aggregationPipeline).exec();
+    const data = await query.exec();
 
-    return {
-        groupedData,
-    };
-}
+    // Group the data by the 'type' field
+    const groupedData = Object.values(
+      data.reduce((acc, item : any) => {
+        const type = item.type;
+        acc[type] = acc[type] || { _id: type, count: 0, data: [] };
+        acc[type].count++;
+        acc[type].data.push({
+          _id: item._id,
+          name: item.name,
+          price: item.price,
+          image: item.image,
+          type: item.type,
+          time: item.time,
+          description: item.description,
+        });
+        return acc;
+      }, {})
+    );
+
+    return { groupedData };
+
+    // // Group the data by the 'type' field
+    // const groupedData = this.groupBy(data, 'type');
+
+    // return groupedData;
+
+
+    // // Aggregation pipeline to group by type and include specified fields
+    // const aggregationPipeline: any[] = [
+    //   { $match: options.filter },
+    //   { $sort: { created_at: 1 } }, // Sort before grouping
+    //   {
+    //     $group: {
+    //       _id: "$type",
+    //       data: { $push: "$$ROOT" }, // Collect the entire document into an array
+    //       count: { $sum: 1 },
+    //     }
+    //   },
+    //   {
+    //     $project: {
+    //       _id: 1,
+    //       data: {
+    //         $map: {
+    //           input: "$data",
+    //           as: "doc",
+    //           in: {
+    //             _id: "$$doc._id",
+    //             name: "$$doc.name",
+    //             price: "$$doc.price",
+    //             image: "$$doc.image",
+    //             type: "$$doc.type",
+    //             time: "$$doc.time",
+    //             description: "$$doc.description",
+    //             created_at: "$$doc.created_at",
+    //           },
+    //         },
+    //       },
+    //       count: 1,
+    //     },
+    //   },
+    // ];
+
+    // const groupedData = await this.serviceModel.aggregate(aggregationPipeline).exec();
+
+    // return {
+    //   groupedData,
+    // };
+
+
+  }
+
+  groupBy(array: any[], key: string): { [key: string]: any[] } {
+    return array.reduce((result, currentValue) => {
+      const currentKey = currentValue[key];
+      (result[currentKey] = result[currentKey] || []).push(currentValue);
+      return result;
+    }, {});
+  }
+
 
 
 

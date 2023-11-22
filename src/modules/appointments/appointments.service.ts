@@ -34,7 +34,7 @@ export class AppointmentsService {
       if (appointment) {
         // Send email
         const bookingPersonEmail = createAppointmentDto.bookingPersonDetails.email;
-        const adminEmails = ['mazraoui.1996@gmail.com', 'laarissareda@gmail.com']
+        const adminEmails = ['mazraoui.1996@gmail.com', 'contact@spadesepices.com']
         const context = {
           fullName: appointment.bookingPersonDetails.fullname,
           date: appointment.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
@@ -134,6 +134,8 @@ export class AppointmentsService {
     if (Object.entries(updateAppointmentDto).length > 0) {
       // Check if the status is set to 'CANCELED'
       const isCanceled = updateAppointmentDto.status === 'CANCELED';
+      // Check if the status is set to 'CONFIRMED'
+      const isConfirmed = updateAppointmentDto.status === 'CONFIRMED';
 
       const appointment = await this.appointmentModel
         .findByIdAndUpdate(id, { ...updateAppointmentDto, updatedBy: authenticatedUser?._id }, { new: true })
@@ -152,16 +154,30 @@ export class AppointmentsService {
       }
 
       // If the status is set to 'CANCELED', send an email
-    if (isCanceled) {
-      const bookingPersonEmail = appointment.bookingPersonDetails.email;
-      const emailSubject = 'Canceled Appointment';
-      const emailTemplate = 'cancel-appointment';
-      const context = { 
-        fullName: appointment.bookingPersonDetails.fullname,
-      }; // Add any additional data needed for the email template
+      if (isCanceled) {
+        const bookingPersonEmail = appointment.bookingPersonDetails.email;
+        const emailSubject = 'Canceled Appointment';
+        const emailTemplate = 'cancel-appointment';
+        const context = {
+          fullName: appointment.bookingPersonDetails.fullname,
+        }; // Add any additional data needed for the email template
 
-      await this.emailService.sendEmail(bookingPersonEmail, emailSubject, emailTemplate, context);
-    }
+        await this.emailService.sendEmail(bookingPersonEmail, emailSubject, emailTemplate, context);
+      }
+
+      // If the status is set to 'CONFIRMED', send an email to the Admins
+      if (isConfirmed) {
+        const adminEmails = ['mazraoui.1996@gmail.com', 'contact@spadesepices.com'];
+        const emailSubject = 'Confirmed Appointment';
+        const emailTemplate = 'confirm-appointment';
+        const context = {
+          fullName: appointment.bookingPersonDetails.fullname,
+          date: appointment.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+          time: appointment.time,
+        }; // Add any additional data needed for the email template
+
+        await this.emailService.sendEmail(adminEmails, emailSubject, emailTemplate, context);
+      }
 
       return appointment;
     } else {
