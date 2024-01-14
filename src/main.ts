@@ -6,5 +6,7 @@ async function bootstrap() {
   // Enable CORS with default options
   app.enableCors();
   await app.listen(3000);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
+    console.log(`Connected to MongoDB: ${process.env.NODE_ENV === 'production' ? 'Production' : 'Development'}`);
 }
 bootstrap();

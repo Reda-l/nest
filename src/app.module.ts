@@ -6,15 +6,21 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ServicesModule } from './modules/services/services.module';
+import * as dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb+srv://spa:mazraoui1996@spa.dbqrkgz.mongodb.net/?retryWrites=true&w=majority', {
-      connectionFactory: (connection) => {
-        connection.plugin(require('mongoose-delete'), { deletedAt: true });
-        return connection;
-      }
-    }),
+    MongooseModule.forRoot(process.env.NODE_ENV === 'production'
+      ? process.env.MONGODB_URI_PROD
+      : process.env.MONGODB_URI_DEV, {
+        connectionFactory: (connection) => {
+          connection.plugin(require('mongoose-delete'), { deletedAt: true });
+          return connection;
+        }
+      }),
     UsersModule,
     AuthModule,
     AppointmentsModule,
@@ -23,4 +29,6 @@ import { ServicesModule } from './modules/services/services.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+}
+
