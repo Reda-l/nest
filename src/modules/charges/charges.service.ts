@@ -52,6 +52,12 @@ export class ChargesService {
       query.select(options.select);
     }
 
+    // Populate the 'responsable' field with specific fields
+    query.populate({
+      path: 'responsable',
+      select: '_id firstname lastname',
+    });
+
     const page: number = parseInt(options.page as any) || 1;
     const limit: number = parseInt(options.limit as any) || 10;
     const total = await this.chargeModel.countDocuments(options.filter);
