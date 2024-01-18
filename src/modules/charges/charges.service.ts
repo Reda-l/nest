@@ -86,68 +86,86 @@ export class ChargesService {
   }
   //function to get stats
   async getStats(options) {
-    let filter: any = {}
-    options.filter.startDate = options.filter.startDate ? new Date(options.filter.startDate) : undefined
-    options.filter.endDate = options.filter.endDate ? new Date(options.filter.endDate) : undefined
-    if (options.filter.startDate) {
-      filter.date = {
-        '$gte': (options.filter.startDate),
-        '$lt': (options.filter.endDate)
-      }
-    }
     try {
-      const totalCharges = await this.chargeModel.aggregate([
-        {
-          $match: {
-            deleted: false,
-            ...filter
+      if (!options.filter?.startDate || !options.filter?.endDate) {
+        throw new HttpException("filter dates are missing", HttpStatus.BAD_REQUEST);
+      }
+      options.filter.startDate = new Date(options.filter.startDate)
+      options.filter.endDate = new Date(options.filter.endDate)
+      let currentDate = new Date(options.filter.startDate);
+      const totalsPerDay: any = []
+      let _totalRevenue = 0
+      let _totalCharges = 0
+      let _totalProfit = 0
+      // Loop until the current date is greater than the end date
+      while (currentDate <= options.filter.endDate) {
+        const totalChargesPerDay = await this.chargeModel.aggregate([
+          {
+            $match: {
+              deleted: false,
+              date: currentDate
+            },
           },
-        },
-        {
-          $group: {
-            _id: null,
-            totalPrice: { $sum: "$price" },
+          {
+            $group: {
+              _id: null,
+              totalPrice: { $sum: "$price" },
+            },
           },
-        },
-        {
-          $project: {
-            _id: 0, // Exclude _id from the result
-            totalPrice: 1,
+          {
+            $project: {
+              _id: 0, // Exclude _id from the result
+              totalPrice: 1,
+            },
           },
-        },
-      ])
-      const totalRevenue = await this.appointmentModel.aggregate([
-        {
-          $match: {
-            deleted: false,
-            ...filter
+        ])
+        const totalRevenuePerDay = await this.appointmentModel.aggregate([
+          {
+            $match: {
+              deleted: false,
+              date: currentDate
+            },
           },
-        },
-        {
-          $unwind: "$reservations",
-        },
-        {
-          $unwind: "$reservations.services",
-        },
-        {
-          $group: {
-            _id: null,
-            totalPrice: { $sum: "$reservations.services.price" },
+          {
+            $unwind: "$reservations",
           },
-        },
-        {
-          $project: {
-            _id: 0,
-            totalPrice: 1,
+          {
+            $unwind: "$reservations.services",
           },
-        },
-      ]);
-      const _totalRevenue=totalRevenue.length > 0 ? totalRevenue[0].totalPrice : 0
-      const _totalCharges= totalCharges.length > 0 ? totalCharges[0].totalPrice : 0
+          {
+            $group: {
+              _id: null,
+              totalPrice: { $sum: "$reservations.services.price" },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              totalPrice: 1,
+            },
+          },
+        ]);
+        const _totalRevenuePerDay = totalRevenuePerDay.length > 0 ? totalRevenuePerDay[0].totalPrice : 0
+        const _totalChargesPerDay = totalChargesPerDay.length > 0 ? totalChargesPerDay[0].totalPrice : 0
+        const _totalProfitPerDay = (_totalRevenuePerDay - _totalChargesPerDay) < 0 ? 0 : (_totalRevenuePerDay - _totalChargesPerDay)
+        _totalRevenue += _totalRevenuePerDay
+        _totalCharges += _totalChargesPerDay
+        _totalProfit += _totalProfitPerDay
+        totalsPerDay.push({
+          totalRevenue: _totalRevenuePerDay,
+          date: currentDate.toISOString().split('T')[0],
+          totalCharges: _totalChargesPerDay,
+          totalProfit: _totalProfitPerDay
+        })
+        // Increment the current date by one day
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
       return {
+        totalsPerDay,
         totalRevenue: _totalRevenue,
         totalCharges: _totalCharges,
-        totalProfit: _totalRevenue - _totalCharges
+        totalProfit: _totalProfit
       }
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
