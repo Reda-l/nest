@@ -30,18 +30,49 @@ export class ChargesService {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
-
   //function to get All charges
   async findAll(options): Promise<any> {
-    // {
-    //   "filter": {
-    //     "date": {
-    //       "$gte": "2024-01-01T12:43:27.859Z",
-    //       "$lt": "2024-01-17T12:43:27.859Z"
-    //     }
-    //   }
-    // }
     options.filter.deleted = false;
+    if (options.filter?.week) {
+      const { startOfWeek, endOfWeek } = this.getStartAndEndOfWeek(options.filter?.week);
+      options.filter.date = {
+        "$gte": startOfWeek,
+        "$lt": endOfWeek
+      }
+      delete options.filter?.week
+    }
+    if (options.filter?.today) {
+      const startOfDay = new Date();
+      const endOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      endOfDay.setHours(23, 59, 59, 999);
+      options.filter.date = {
+        "$gte": startOfDay,
+        "$lt": endOfDay
+      }
+      delete options.filter?.today
+    }
+    if (options.filter?.year) {
+      const currentYear = options.filter?.year || new Date().getFullYear();
+      const firstDay = new Date(currentYear, 0, 1);
+      const lastDay = new Date(currentYear, 11, 31);
+      options.filter.date = {
+        "$gte": firstDay,
+        "$lt": lastDay
+      }
+      delete options.filter?.year
+    }
+    if (options.filter?.month) {
+      var date = new Date();
+      const month = options.filter?.month || date.getMonth()
+      var firstDay = new Date(date.getFullYear(), month, 1);
+      var lastDay = new Date(date.getFullYear(), month + 1, 0);
+      options.filter.date = {
+        "$gte": firstDay,
+        "$lt": lastDay
+      }
+      delete options.filter?.month
+    }
     const query = this.chargeModel.find(options.filter);
 
     if (options.sort) {
@@ -161,15 +192,96 @@ export class ChargesService {
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
+
       return {
         totalsPerDay,
         totalRevenue: _totalRevenue,
         totalCharges: _totalCharges,
-        totalProfit: _totalProfit
+        totalProfit: _totalProfit,
       }
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
 
+    }
+  }
+  async getTopPerformanceStats(options) {
+    try {
+      const topServices = await this.appointmentModel.aggregate([
+        {
+          $match: {
+            deleted: false,
+          },
+        },
+        {
+          $unwind: "$reservations",
+        },
+        {
+          $unwind: "$reservations.services",
+        },
+        {
+          $group: {
+            _id: "$reservations.services._id",
+            serviceName: { $first: "$reservations.services.name" },
+            servicePrice: { $first: "$reservations.services.price" },
+            totalUsage: { $sum: 1 },
+          },
+        },
+        {
+          $sort: { totalUsage: -1 },
+        },
+        {
+          $limit: options.filter?.topServicesLimit || 4,
+        },
+      ]);
+      const topRevenuesPerDay = await this.appointmentModel.aggregate([
+        {
+          $match: {
+            deleted: false,
+          },
+        },
+        {
+          $unwind: "$reservations",
+        },
+        {
+          $unwind: "$reservations.services",
+        },
+        {
+          $group: {
+            _id: {
+              date: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+              appointmentId: "$_id",
+            },
+            totalRevenue: { $sum: "$reservations.services.price" },
+          },
+        },
+        {
+          $group: {
+            _id: "$_id.date",
+            totalRevenue: { $sum: "$totalRevenue" },
+            appointments: { $push: { appointmentId: "$_id.appointmentId", totalRevenue: "$totalRevenue" } },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            date: "$_id",
+            appointments: 1,
+            totalRevenue: 1,
+          },
+        },
+        {
+          $sort: { totalRevenue: -1 },
+        },
+        {
+          $limit: options.filter?.topRevenuesLimit || 5,
+        },
+      ]);
+      return {
+        topServices,
+        topRevenuesPerDay
+      }
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
   // function to find one charge with id
@@ -289,5 +401,20 @@ export class ChargesService {
       await this.remove(charge._id)
       return charge;
     }));
+  }
+  getStartAndEndOfWeek(weekNumber: number): { startOfWeek: Date, endOfWeek: Date } {
+    const date = new Date()
+    const januaryFirst = new Date(date.getFullYear(), 0, 1);
+    const daysToFirstMonday = (8 - januaryFirst.getDay()) % 7;
+
+    const startDate = new Date(date.getFullYear(), 0, 1 + daysToFirstMonday + (weekNumber - 1) * 7);
+    const endDate = new Date(startDate);
+
+    endDate.setDate(endDate.getDate() + 6);
+
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    return { startOfWeek: startDate, endOfWeek: endDate };
   }
 }

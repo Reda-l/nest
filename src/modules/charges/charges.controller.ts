@@ -29,6 +29,13 @@ export class ChargesController {
     if (!query.filter) query.filter = {};
     return this.chargesService.getStats(query);
   }
+  @UseGuards(AuthJwtAuthGuard)
+  @Get("top-stats")
+  getTopPerformanceStats(@Req() req: ReqOptions) {
+    let query = req.query.s ? JSON.parse(req.query.s as string) : {};
+    if (!query.filter) query.filter = {};
+    return this.chargesService.getTopPerformanceStats(query);
+  }
 
   @UseGuards(AuthJwtAuthGuard)
   @Get(':id')

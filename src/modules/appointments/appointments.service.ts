@@ -19,8 +19,6 @@ export class AppointmentsService {
   ) { }
   async create(createAppointmentDto: CreateAppointmentDto): Promise<Appointment | undefined> {
     try {
-
-
       // Save the appointment record
       const appointment = await this.appointmentModel.create({
         date: createAppointmentDto.date,
