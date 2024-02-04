@@ -9,9 +9,11 @@ import { Service } from 'src/core/types/interfaces/service.interface';
 export class ServicesService {
   constructor(
     @InjectModel('Service') public readonly serviceModel: Model<Service>,
-  ) { }
+  ) {}
 
-  async create(createServiceDto: CreateServiceDto): Promise<Service | undefined> {
+  async create(
+    createServiceDto: CreateServiceDto,
+  ): Promise<Service | undefined> {
     try {
       // Save the service record
       const service = await this.serviceModel.create(createServiceDto);
@@ -21,17 +23,18 @@ export class ServicesService {
     }
   }
 
-
   async findAll(options): Promise<any> {
     options.filter.deleted = false;
 
-    const query = this.serviceModel.find(options.filter).sort({ created_at: 1 });
+    const query = this.serviceModel
+      .find(options.filter)
+      .sort({ created_at: 1 });
 
     const data = await query.exec();
 
     // Group the data by the 'type' field
     const groupedData = Object.values(
-      data.reduce((acc, item : any) => {
+      data.reduce((acc, item: any) => {
         const type = item.type;
         acc[type] = acc[type] || { _id: type, count: 0, data: [] };
         acc[type].count++;
@@ -42,10 +45,11 @@ export class ServicesService {
           image: item.image,
           type: item.type,
           time: item.time,
-          description: item.description,
+          status : item.status,
+          description: item.description
         });
         return acc;
-      }, {})
+      }, {}),
     );
 
     return { groupedData };
@@ -54,7 +58,6 @@ export class ServicesService {
     // const groupedData = this.groupBy(data, 'type');
 
     // return groupedData;
-
 
     // // Aggregation pipeline to group by type and include specified fields
     // const aggregationPipeline: any[] = [
@@ -96,8 +99,6 @@ export class ServicesService {
     // return {
     //   groupedData,
     // };
-
-
   }
 
   groupBy(array: any[], key: string): { [key: string]: any[] } {
@@ -107,9 +108,6 @@ export class ServicesService {
       return result;
     }, {});
   }
-
-
-
 
   async findOne(id: string): Promise<Service> {
     try {
@@ -132,18 +130,42 @@ export class ServicesService {
     }
   }
 
-
   async update(id: string, updateServiceDto: UpdateServiceDto) {
     try {
-      const updatedService = await this.serviceModel.findByIdAndUpdate(id, updateServiceDto, { new: true });
+      const updatedService = await this.serviceModel.findByIdAndUpdate(
+        id,
+        updateServiceDto,
+        { new: true },
+      );
 
       if (!updatedService) {
-        throw new HttpException(`Service with id ${id} not found`, HttpStatus.NOT_FOUND);
+        throw new HttpException(
+          `Service with id ${id} not found`,
+          HttpStatus.NOT_FOUND,
+        );
       }
 
       return updatedService;
     } catch (error) {
-      throw new HttpException(`Error updating service: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Error updating service: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  // set all services as ACTIVE
+  async updateServices() {
+    try {
+      // Use Mongoose updateMany to update all documents
+      const result = await this.serviceModel.updateMany(
+        {},
+        { $set: { status: 'ACTIVE' } },
+      );
+
+      console.log(`Number of services updated: ${result.modifiedCount}`);
+    } catch (error) {
+      console.error('Error updating services:', error);
     }
   }
 
@@ -152,19 +174,16 @@ export class ServicesService {
   }
 
   /**
- * Reads a mongo database error and attempts to provide a better error message. If
- * it is unable to produce a better error message, returns the original error message.
- *
- * @private
- * @param {MongoError} error
- * @param {CreateFlowChartInput} createFlowChartInput
- * @returns {Error}
- * @memberof flowChartService
- */
-  private evaluateMongoError(
-    error: MongooseError,
-    dto: any,
-  ): Error {
+   * Reads a mongo database error and attempts to provide a better error message. If
+   * it is unable to produce a better error message, returns the original error message.
+   *
+   * @private
+   * @param {MongoError} error
+   * @param {CreateFlowChartInput} createFlowChartInput
+   * @returns {Error}
+   * @memberof flowChartService
+   */
+  private evaluateMongoError(error: MongooseError, dto: any): Error {
     throw new Error(error.message);
   }
 }
