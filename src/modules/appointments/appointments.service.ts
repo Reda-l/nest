@@ -77,11 +77,11 @@ export class AppointmentsService {
     const data = await query
       .skip((page - 1) * count)
       .limit(count)
-      // .populate({
-      //   path: 'reservations.services',
-      //   model: 'Service',
-      //   select: '-deleted -created_at -updated_at -__v'
-      // })
+      .populate({
+        path: 'discount',
+        model: 'Discount',
+        select: '-deleted -created_at -updated_at -__v'
+      })
       .exec();
 
     return {
@@ -108,11 +108,11 @@ export class AppointmentsService {
           select: '_id firstname lastname username',
           model: 'User'
         })
-        // .populate({
-        //   path: 'reservations.services',
-        //   model: 'Service',
-        //   select: '-deleted -created_at -updated_at -__v'
-        // })
+        .populate({
+          path: 'discount',
+          model: 'Discount',
+          select: '-deleted -created_at -updated_at -__v'
+        })
         .exec();
       if (!appointment) {
         throw new HttpException(
@@ -141,6 +141,11 @@ export class AppointmentsService {
           path: 'updatedBy',
           select: '_id firstname lastname username',
           model: 'User'
+        })
+        .populate({
+          path: 'discount',
+          model: 'Discount',
+          select: '-deleted -created_at -updated_at -__v'
         })
         .exec();
 

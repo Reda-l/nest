@@ -46,4 +46,14 @@ export class DiscountController {
   remove(@Param('id') id: string) {
     return this.discountService.remove(id);
   }
+
+  @Get('check/:code')
+  async checkDiscount(@Param('code') code: string): Promise<object> {
+    try {
+      const message = await this.discountService.checkDiscount(code);
+      return message;
+    } catch (error) {
+      return error.message;
+    }
+  }
 }

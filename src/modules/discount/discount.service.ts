@@ -184,4 +184,28 @@ export class DiscountService {
       return discount;
     }));
   }
+
+  async checkDiscount(code: string): Promise<object> {
+    const discount = await this.chargeModel.findOne({ code }).exec();
+    
+    if (!discount) {
+      return {
+        message : 'DISCOUNT_NOT_FOUND'
+      }
+    }
+
+    if (discount.status === 'ACTIVE') {
+      return {
+        message : 'VALID_DISCOUNT',        
+      }
+    } else if (discount.status === 'INACTIVE') {
+      return {
+        message : 'INVALID_DISCOUNT',
+      }
+    } else {
+      return {
+        message : 'DISCOUNT_NOT_FOUND',
+      }
+    }
+  }
 }
