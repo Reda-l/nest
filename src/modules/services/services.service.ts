@@ -4,6 +4,7 @@ import { UpdateServiceDto } from './dto/update-service.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, MongooseError } from 'mongoose';
 import { Service } from 'src/core/types/interfaces/service.interface';
+import { uploadFirebaseFile } from 'src/core/shared/firebaseUpload';
 
 @Injectable()
 export class ServicesService {
@@ -15,6 +16,14 @@ export class ServicesService {
     createServiceDto: CreateServiceDto,
   ): Promise<Service | undefined> {
     try {
+      // //upload image
+      if (createServiceDto.image) {
+        const imageUrl = await uploadFirebaseFile(
+          createServiceDto.image,
+          'services',
+        );
+        createServiceDto.image = imageUrl;
+      }
       // Save the service record
       const service = await this.serviceModel.create(createServiceDto);
       return service;
@@ -108,6 +117,18 @@ export class ServicesService {
       return result;
     }, {});
   }
+
+  async getAllTypes(): Promise<string[]> {
+    const options = { filter: { deleted: false } };
+
+    const query = this.serviceModel
+        .find(options.filter)
+        .distinct('type');
+
+    const types = await query.exec();
+    
+    return types;
+}
 
   async findOne(id: string): Promise<Service> {
     try {
