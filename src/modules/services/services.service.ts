@@ -20,7 +20,7 @@ export class ServicesService {
       if (createServiceDto.image) {
         const imageUrl = await uploadFirebaseFile(
           createServiceDto.image,
-          'services',
+          'spa-services',
         );
         createServiceDto.image = imageUrl;
       }
@@ -54,8 +54,8 @@ export class ServicesService {
           image: item.image,
           type: item.type,
           time: item.time,
-          status : item.status,
-          description: item.description
+          status: item.status,
+          description: item.description,
         });
         return acc;
       }, {}),
@@ -121,14 +121,12 @@ export class ServicesService {
   async getAllTypes(): Promise<string[]> {
     const options = { filter: { deleted: false } };
 
-    const query = this.serviceModel
-        .find(options.filter)
-        .distinct('type');
+    const query = this.serviceModel.find(options.filter).distinct('type');
 
     const types = await query.exec();
-    
+
     return types;
-}
+  }
 
   async findOne(id: string): Promise<Service> {
     try {
@@ -153,6 +151,14 @@ export class ServicesService {
 
   async update(id: string, updateServiceDto: UpdateServiceDto) {
     try {
+      // //upload image
+      if (updateServiceDto.image) {
+        const imageUrl = await uploadFirebaseFile(
+          updateServiceDto.image,
+          'spa-services',
+        );
+        updateServiceDto.image = imageUrl;
+      }
       const updatedService = await this.serviceModel.findByIdAndUpdate(
         id,
         updateServiceDto,

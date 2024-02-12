@@ -16,14 +16,17 @@ dotenv.config();
 
 @Module({
   imports: [
-    MongooseModule.forRoot(process.env.NODE_ENV === 'production'
-      ? process.env.MONGODB_URI_PROD
-      : process.env.MONGODB_URI_DEV, {
+    MongooseModule.forRoot(
+      process.env.NODE_ENV === 'production'
+        ? process.env.MONGODB_URI_PROD
+        : process.env.MONGODB_URI_DEV,
+      {
         connectionFactory: (connection) => {
           connection.plugin(require('mongoose-delete'), { deletedAt: true });
           return connection;
-        }
-      }),
+        },
+      },
+    ),
     UsersModule,
     AuthModule,
     AppointmentsModule,
@@ -35,6 +38,4 @@ dotenv.config();
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {
-}
-
+export class AppModule {}
