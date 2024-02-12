@@ -1,19 +1,23 @@
 import * as admin from 'firebase-admin';
-export async function uploadFirebaseFile(file, destination : string): Promise<any> {
+export async function uploadFirebaseFile(
+    file,
+    destination: string,
+  ): Promise<any> {
     if (!file) return null;
-    const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
+    const bucketName = 'spa-epices.appspot.com';
     const bucket = admin.storage().bucket(bucketName);
-    const folder = destination
-    const options = {
-        public: true,
-        destination: folder + '/' + file.filename,
-    };
-    await bucket.upload(file.path, options);
-    const fileUrl = `https://storage.googleapis.com/${bucketName}/${folder}/${file.filename}`;
+    const fileName = `${destination}/${file.originalname}`;
+    const fileBuffer = file.buffer;
+    await bucket.file(fileName).save(fileBuffer, {
+      metadata: {
+        contentType: file.mimetype,
+      },
+    });
+    const fileUrl = `https://storage.googleapis.com/${bucketName}/${fileName}`;
     console.log(`File uploaded successfully: ${fileUrl}`);
-
+  
     return fileUrl;
-}
+  }
 
 export async function deleteFile(filePath: string): Promise<any> {
     if (!filePath) return null;
