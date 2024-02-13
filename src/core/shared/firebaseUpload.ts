@@ -1,7 +1,7 @@
 import * as admin from 'firebase-admin';
 export async function uploadFirebaseFile(file, destination : string): Promise<any> {
   if (!file) return null;
-  const bucketName = 'spa-dev-9ad7f.appspot.com';
+  const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
   const bucket = admin.storage().bucket(bucketName);
   const folder = destination
   const options = {

@@ -3,7 +3,7 @@ import * as mongoose from 'mongoose';
 import { Schema as MongooseSchema } from 'mongoose';
 import * as _ from 'lodash';
 import { User } from 'src/core/types/interfaces/user.interface';
-import { validateEmail, STATUS_OPTIONS, GENDER_OPTIONS } from 'src/core/shared/shared.enum';
+import { validateEmail, STATUS_OPTIONS, GENDER_OPTIONS, Role } from 'src/core/shared/shared.enum';
 
 
 const UsersSchema = new mongoose.Schema(
@@ -50,6 +50,12 @@ const UsersSchema = new mongoose.Schema(
             type: String,
             enum: GENDER_OPTIONS,
             default: GENDER_OPTIONS.MALE,
+            required: true,
+        },
+        role: {
+            type: String,
+            enum: Role,
+            default: Role.Employee,
             required: true,
         },
 

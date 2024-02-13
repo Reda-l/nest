@@ -6,21 +6,25 @@ import { Request as ReqOptions } from 'express';
 import { AuthJwtAuthGuard } from 'src/core/guards/auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Multer } from 'multer';
+import { RolesGuard } from 'src/core/guards/roles.guard';
+import { Roles, Role } from 'src/core/shared/shared.enum';
 
 @Controller('services')
 export class ServicesController {
-  constructor(private readonly servicesService: ServicesService) {}
+  constructor(private readonly servicesService: ServicesService) { }
 
-  @UseGuards(AuthJwtAuthGuard)
+  @UseGuards(AuthJwtAuthGuard, RolesGuard)
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Mannager)
   @Post()
   @UseInterceptors(
     FileInterceptor('image')
   )
-  create(@Body() createServiceDto: CreateServiceDto, @UploadedFile() file : Express.Multer.File) {
+  create(@Body() createServiceDto: CreateServiceDto, @UploadedFile() file: Express.Multer.File) {
     return this.servicesService.create({ ...createServiceDto, image: file ? file : undefined });
   }
 
-  @UseGuards(AuthJwtAuthGuard)
+  @UseGuards(AuthJwtAuthGuard, RolesGuard)
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Mannager)
   @Get()
   findAll(@Request() request, @Req() req: ReqOptions) {
     let query = req.query.s ? JSON.parse(req.query.s as string) : {};
@@ -28,28 +32,32 @@ export class ServicesController {
     return this.servicesService.findAll(query);
   }
 
-  @UseGuards(AuthJwtAuthGuard)
+  @UseGuards(AuthJwtAuthGuard, RolesGuard)
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Mannager)
   @Get('types')
   async getAllTypes(): Promise<string[]> {
     return await this.servicesService.getAllTypes();
   }
 
-  @UseGuards(AuthJwtAuthGuard)
+  @UseGuards(AuthJwtAuthGuard, RolesGuard)
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Mannager)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.servicesService.findOne(id);
   }
-  
-  @UseGuards(AuthJwtAuthGuard)
+
+  @UseGuards(AuthJwtAuthGuard, RolesGuard)
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Mannager)
   @Patch(':id')
   @UseInterceptors(
     FileInterceptor('image')
   )
-  update(@Param('id') id: string, @Body() updateServiceDto: UpdateServiceDto, @UploadedFile() file : Express.Multer.File) {
+  update(@Param('id') id: string, @Body() updateServiceDto: UpdateServiceDto, @UploadedFile() file: Express.Multer.File) {
     console.log("🚀 ~ ServicesController ~ update ~ file:", file)
     return this.servicesService.update(id, { ...updateServiceDto, image: file ? file : undefined });
   }
-  
+  @UseGuards(AuthJwtAuthGuard, RolesGuard)
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Mannager)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.servicesService.remove(+id);

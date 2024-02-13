@@ -1,3 +1,4 @@
+import { SetMetadata } from '@nestjs/common';
 export enum STATUS_OPTIONS {
   NEW = 'NEW',
   VALIDATION = 'VALIDATION',
@@ -26,6 +27,14 @@ export enum GENDER_OPTIONS {
   FEMALE = 'FEMALE',
   OTHER = 'OTHER',
 }
+export enum Role {
+  SuperAdmin = 'SUPER_ADMIN',
+  Admin = 'ADMIN',
+  Cassier = 'CASSIER',
+  Mannager = 'MANAGER',
+  Employee = 'EMPLOYEE',
+}
+
 
 export function validateEmail(email) {
   const re =
@@ -33,4 +42,5 @@ export function validateEmail(email) {
   return re.test(String(email).toLowerCase());
 }
 
-
+export const ROLES_KEY = 'roles';
+export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);

@@ -5,18 +5,22 @@ import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { Request as ReqOptions } from 'express';
 import { EmailService } from 'src/core/shared/email.service';
 import { AuthJwtAuthGuard } from 'src/core/guards/auth.guard';
+import { RolesGuard } from 'src/core/guards/roles.guard';
+import { Roles, Role } from 'src/core/shared/shared.enum';
 
 @Controller('appointments')
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService, private emailService: EmailService) { }
 
-  // @UseGuards(AuthJwtAuthGuard)
+  @UseGuards(AuthJwtAuthGuard, RolesGuard)
+  @Roles(Role.SuperAdmin, Role.Admin,Role.Mannager)
   @Post()
   async create(@Body() createAppointmentDto: CreateAppointmentDto) {
     return await this.appointmentsService.create(createAppointmentDto);
   }
 
-  @UseGuards(AuthJwtAuthGuard)
+  @UseGuards(AuthJwtAuthGuard, RolesGuard)
+  @Roles(Role.SuperAdmin, Role.Admin,Role.Mannager)
   @Post('send-email')
   async sendExampleEmail() {
     try {
@@ -28,7 +32,8 @@ export class AppointmentsController {
     }
   }
 
-  @UseGuards(AuthJwtAuthGuard)
+  @UseGuards(AuthJwtAuthGuard, RolesGuard)
+  @Roles(Role.SuperAdmin, Role.Admin,Role.Mannager)
   @Get()
   findAll(@Request() request, @Req() req: ReqOptions) {
     let query = req.query.s ? JSON.parse(req.query.s as string) : {};
@@ -36,23 +41,26 @@ export class AppointmentsController {
     return this.appointmentsService.findAll(query);
   }
 
-  @UseGuards(AuthJwtAuthGuard)
+  @UseGuards(AuthJwtAuthGuard, RolesGuard)
+  @Roles(Role.SuperAdmin, Role.Admin,Role.Mannager)
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return await this.appointmentsService.findOne(id);
   }
 
-  @UseGuards(AuthJwtAuthGuard)
+  @UseGuards(AuthJwtAuthGuard, RolesGuard)
+  @Roles(Role.SuperAdmin, Role.Admin,Role.Mannager)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateAppointmentDto: UpdateAppointmentDto, @Request() request) {
     const authenticated = request.user
-    return this.appointmentsService.update(id, updateAppointmentDto,authenticated);
+    return this.appointmentsService.update(id, updateAppointmentDto, authenticated);
   }
 
-  @UseGuards(AuthJwtAuthGuard)
+  @UseGuards(AuthJwtAuthGuard, RolesGuard)
+  @Roles(Role.SuperAdmin, Role.Admin,Role.Mannager)
   @Delete(':id')
-  remove(@Param('id') id: string,@Request() request) {
+  remove(@Param('id') id: string, @Request() request) {
     const authenticated = request.user
-    return this.appointmentsService.remove(id,authenticated);
+    return this.appointmentsService.remove(id, authenticated);
   }
 }

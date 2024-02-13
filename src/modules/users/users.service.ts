@@ -7,6 +7,8 @@ import { MongoError } from 'mongodb';
 import * as bcrypt from 'bcrypt';
 import { User } from 'src/core/types/interfaces/user.interface';
 import { createObjectCsvWriter } from 'csv-writer';
+import { uploadFirebaseFile } from 'src/core/shared/firebaseUpload';
+import { Role } from 'src/core/shared/shared.enum';
 
 @Injectable()
 export class UsersService {
@@ -16,6 +18,11 @@ export class UsersService {
 
   // function to create User
   async create(createUserDto: CreateUserDto): Promise<User> {
+    // //upload image
+    if (createUserDto.imageUrl) {
+      const imageUrl = await uploadFirebaseFile(createUserDto.imageUrl, 'avatars')
+      createUserDto.imageUrl = imageUrl
+    }
     let createdUser = new this.userModel(createUserDto);
     let user: User | undefined;
     // generate a salt
@@ -79,7 +86,7 @@ export class UsersService {
     let options = {} as any;
     options.deleted = false;
 
-    let user = this.userModel.findById(id, options).select(['-password','-createdBy','-address']);
+    let user = this.userModel.findById(id, options).select(['-password', '-createdBy', '-address']);
     const doesUserExit = this.userModel.exists({ _id: id });
 
     return doesUserExit
@@ -119,8 +126,8 @@ export class UsersService {
 
   // function to find user by username
   async findByPayload(payload) {
-    const { username } = payload;
-    const user = await this.userModel.findOne({ username: username });
+    const { id } = payload;
+    const user = await this.userModel.findOne({ _id: id });
     return user;
   }
 
@@ -152,7 +159,11 @@ export class UsersService {
     if (updateUserDto.password) {
       this.resetPassword(updateUserDto.username, updateUserDto.password);
     }
-
+    // //upload image
+    if (updateUserDto.imageUrl) {
+      const imageUrl = await uploadFirebaseFile(updateUserDto.imageUrl, 'avatars')
+      updateUserDto.imageUrl = imageUrl
+    }
     // check if email already used
     if (updateUserDto.email) {
       const duplicateUser = await this.findOneByEmail(updateUserDto.email);
@@ -186,8 +197,14 @@ export class UsersService {
   }
 
   // soft delete user record by id ( set deleted to true and deleted_at to date now )
-  async remove(id: string): Promise<User | undefined> {
+  async remove(id: string, authUser?: any): Promise<User | undefined> {
     const user = await this.userModel.findById(id);
+    if (authUser && authUser?.role == Role.Admin && user.role == Role.SuperAdmin) {
+      throw new HttpException(
+        `an admin cannot delete a super admin`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
     if (!user) {
       throw new HttpException(
         `Could not find user with id ${id}`,
