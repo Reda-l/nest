@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { ChargesService } from './charges.service';
 import { CreateChargeDto } from './dto/create-charge.dto';
 import { UpdateChargeDto } from './dto/update-charge.dto';
 import { AuthJwtAuthGuard } from 'src/core/guards/auth.guard';
 import { Request as ReqOptions } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('charges')
 export class ChargesController {
@@ -11,8 +12,11 @@ export class ChargesController {
 
   @UseGuards(AuthJwtAuthGuard)
   @Post()
-  create(@Body() createChargeDto: CreateChargeDto) {
-    return this.chargesService.create(createChargeDto);
+  @UseInterceptors(
+    FileInterceptor('image')
+  )
+  create(@Body() createChargeDto: CreateChargeDto,@UploadedFile() file : Express.Multer.File) {
+    return this.chargesService.create({ ...createChargeDto, image: file ? file : undefined });
   }
 
   @UseGuards(AuthJwtAuthGuard)
@@ -51,8 +55,11 @@ export class ChargesController {
 
   @UseGuards(AuthJwtAuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateChargeDto: UpdateChargeDto) {
-    return this.chargesService.update(id, updateChargeDto);
+  @UseInterceptors(
+    FileInterceptor('image')
+  )
+  update(@Param('id') id: string, @Body() updateChargeDto: UpdateChargeDto,@UploadedFile() file : Express.Multer.File) {
+    return this.chargesService.update(id, { ...updateChargeDto, image: file ? file : undefined });
   }
 
   @UseGuards(AuthJwtAuthGuard)

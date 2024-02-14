@@ -46,7 +46,6 @@ export class ServicesController {
     FileInterceptor('image')
   )
   update(@Param('id') id: string, @Body() updateServiceDto: UpdateServiceDto, @UploadedFile() file : Express.Multer.File) {
-    console.log("🚀 ~ ServicesController ~ update ~ file:", file)
     return this.servicesService.update(id, { ...updateServiceDto, image: file ? file : undefined });
   }
   

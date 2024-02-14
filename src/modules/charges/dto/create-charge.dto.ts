@@ -1,1 +1,6 @@
-export class CreateChargeDto {}
+import { ApiProperty } from "@nestjs/swagger";
+
+export class CreateChargeDto {
+    @ApiProperty()
+    image: any;
+}
