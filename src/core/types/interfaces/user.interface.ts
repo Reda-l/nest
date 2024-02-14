@@ -13,6 +13,7 @@ export class User extends Document {
   DOB?: Date;
   @Exclude()
   password?: string;
+  role?: string;
   phoneNumber?: string;
   imageUrl?: string;
   emailVerified?: boolean;

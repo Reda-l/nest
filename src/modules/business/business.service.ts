@@ -4,6 +4,7 @@ import { UpdateBusinessDto } from './dto/update-business.dto';
 import { Business } from 'src/core/types/interfaces/business.interface';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { uploadFirebaseFile } from 'src/core/shared/firebaseUpload';
 
 @Injectable()
 export class BusinessService {
@@ -12,6 +13,11 @@ export class BusinessService {
   ) { }
   // function to create Business
   async create(createBusinessDto: CreateBusinessDto): Promise<Business> {
+    // //upload image
+    if (createBusinessDto.logo) {
+      const imageUrl = await uploadFirebaseFile(createBusinessDto.logo, 'logos')
+      createBusinessDto.logo = imageUrl
+    }
     let createdBusiness = new this.chargeModel(createBusinessDto);
     let business: Business | undefined;
     try {
@@ -72,7 +78,7 @@ export class BusinessService {
     options.deleted = false;
 
     let business = this.chargeModel.findById(id, options);
-    const doesBusinessExit = this.chargeModel.exists({ _id: id,options });
+    const doesBusinessExit = this.chargeModel.exists({ _id: id, options });
 
     return doesBusinessExit
       .then(async (result) => {
@@ -100,6 +106,11 @@ export class BusinessService {
     if (!existingBusiness) {
       // Handle the case where the business with the provided ID does not exist
       throw new HttpException('Business not found', HttpStatus.NOT_FOUND);
+    }
+    // //upload image
+    if (updateBusinessDto.logo) {
+      const imageUrl = await uploadFirebaseFile(updateBusinessDto.logo, 'logos')
+      updateBusinessDto.logo = imageUrl
     }
     const fields: UpdateBusinessDto = {};
     for (const key in updateBusinessDto) {

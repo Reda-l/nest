@@ -1,8 +1,6 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty,ApiTags } from "@nestjs/swagger";
 import { IsArray, IsNotEmpty, IsNumber, IsString, IsUrl } from "class-validator";
-
 export class CreateServiceDto {
-
     @ApiProperty()
     @IsString()
     @IsNotEmpty()

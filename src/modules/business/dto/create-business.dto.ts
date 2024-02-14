@@ -1,1 +1,3 @@
-export class CreateBusinessDto {}
+export class CreateBusinessDto {
+  logo: any;
+}
