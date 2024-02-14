@@ -6,8 +6,11 @@ import { AuthJwtAuthGuard } from 'src/core/guards/auth.guard';
 import { Request as ReqOptions } from 'express';
 import { RolesGuard } from 'src/core/guards/roles.guard';
 import { Roles, Role } from 'src/core/shared/shared.enum';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @Controller('charges')
+@ApiTags('Charges')
+@ApiBearerAuth()
 export class ChargesController {
   constructor(private readonly chargesService: ChargesService) { }
 

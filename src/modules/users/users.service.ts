@@ -9,6 +9,7 @@ import { User } from 'src/core/types/interfaces/user.interface';
 import { createObjectCsvWriter } from 'csv-writer';
 import { uploadFirebaseFile } from 'src/core/shared/firebaseUpload';
 import { Role } from 'src/core/shared/shared.enum';
+import { CreateAuthDto } from '../auth/dto/create-auth.dto';
 
 @Injectable()
 export class UsersService {
@@ -105,8 +106,8 @@ export class UsersService {
   }
 
   // function find user with login data
-  async findByLogin(userDTO: CreateUserDto): Promise<User | undefined | User> {
-    const { username, password, email } = userDTO;
+  async findByLogin(userDTO: CreateAuthDto): Promise<User | undefined | User> {
+    const {  password, email } = userDTO;
     let user;
 
     user = await this.userModel.findOne({ email });

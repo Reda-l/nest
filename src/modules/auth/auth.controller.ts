@@ -2,13 +2,16 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpS
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { AuthJwtAuthGuard } from 'src/core/guards/auth.guard';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { CreateAuthDto } from './dto/create-auth.dto';
 
 @Controller('auth')
+@ApiTags('Auth')
 export class AuthController {
   constructor(private readonly authService: AuthService, private userService: UsersService) { }
 
   @Post('login')
-  async login(@Request() req, @Body() userDTO: any) {
+  async login(@Request() req, @Body() userDTO: CreateAuthDto) {
     try {
       const user = await this.userService.findByLogin(userDTO) as any;
       console.log("🚀 ~ AuthController ~ login ~ user:", user)
@@ -48,6 +51,7 @@ export class AuthController {
   }
 
   @UseGuards(AuthJwtAuthGuard)
+  @ApiBearerAuth()
   @Get('me')
   async findMe(@Request() req) {
     return {
@@ -62,6 +66,7 @@ export class AuthController {
   }
 
   @UseGuards(AuthJwtAuthGuard)
+  @ApiBearerAuth()
   @Post('refresh-token')
   async refreshToken(@Request() req) {
     const payload = {

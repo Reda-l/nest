@@ -7,8 +7,11 @@ import { Request as ReqOptions } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Role, Roles } from 'src/core/shared/shared.enum';
 import { RolesGuard } from 'src/core/guards/roles.guard';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @Controller('business')
+@ApiTags('Business')
+@ApiBearerAuth()
 export class BusinessController {
   constructor(private readonly businessService: BusinessService) { }
 

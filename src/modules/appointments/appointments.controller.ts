@@ -7,8 +7,11 @@ import { EmailService } from 'src/core/shared/email.service';
 import { AuthJwtAuthGuard } from 'src/core/guards/auth.guard';
 import { RolesGuard } from 'src/core/guards/roles.guard';
 import { Roles, Role } from 'src/core/shared/shared.enum';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @Controller('appointments')
+@ApiTags('Appointments')
+@ApiBearerAuth()
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService, private emailService: EmailService) { }
 

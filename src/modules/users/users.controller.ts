@@ -7,8 +7,11 @@ import { AuthJwtAuthGuard } from '../../core/guards/auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { RolesGuard } from 'src/core/guards/roles.guard';
 import { Roles, Role } from 'src/core/shared/shared.enum';
+import { ApiTags ,ApiBearerAuth} from '@nestjs/swagger';
 
 @Controller('users')
+@ApiTags('Users')
+@ApiBearerAuth()
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
@@ -30,7 +33,8 @@ export class UsersController {
   }
 
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
-  @Roles(Role.SuperAdmin, Role.Admin) @Get()
+  @Roles(Role.SuperAdmin, Role.Admin) 
+  @Get()
   findAll(@Request() request, @Req() req: ReqOptions) {
     let query = req.query.s ? JSON.parse(req.query.s as string) : {};
     if (!query.filter) query.filter = {};

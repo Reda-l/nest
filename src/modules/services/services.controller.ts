@@ -8,11 +8,13 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Multer } from 'multer';
 import { RolesGuard } from 'src/core/guards/roles.guard';
 import { Roles, Role } from 'src/core/shared/shared.enum';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @Controller('services')
+@ApiTags('Services')
+@ApiBearerAuth()
 export class ServicesController {
   constructor(private readonly servicesService: ServicesService) { }
-
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
   @Roles(Role.SuperAdmin, Role.Admin, Role.Mannager)
   @Post()
@@ -22,7 +24,6 @@ export class ServicesController {
   create(@Body() createServiceDto: CreateServiceDto, @UploadedFile() file: Express.Multer.File) {
     return this.servicesService.create({ ...createServiceDto, image: file ? file : undefined });
   }
-
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
   @Roles(Role.SuperAdmin, Role.Admin, Role.Mannager)
   @Get()
