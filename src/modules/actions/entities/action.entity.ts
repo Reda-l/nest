@@ -5,7 +5,7 @@ const ActionsSchema = new mongoose.Schema(
     {
         type: { type: String },
         module: { type: String },
-        object: {
+        entity: {
             id: { type: String },
             title: { type: String },
         },
