@@ -11,6 +11,8 @@ import { BusinessModule } from './modules/business/business.module';
 import { DiscountModule } from './modules/discount/discount.module';
 import { ActionsModule } from './modules/actions/actions.module';
 import * as dotenv from 'dotenv';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ActionsInterceptor } from './core/interceptors/actions.interceptor';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -38,6 +40,9 @@ dotenv.config();
     ActionsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,    {
+    provide: APP_INTERCEPTOR,
+    useClass: ActionsInterceptor,
+  },],
 })
 export class AppModule {}

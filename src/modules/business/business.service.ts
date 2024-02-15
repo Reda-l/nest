@@ -14,7 +14,7 @@ export class BusinessService {
   // function to create Business
   async create(createBusinessDto: CreateBusinessDto): Promise<Business> {
     // //upload image
-    if (createBusinessDto.logo) {
+    if (createBusinessDto.logo && typeof createBusinessDto.logo === 'object') {
       const imageUrl = await uploadFirebaseFile(createBusinessDto.logo, 'logos')
       createBusinessDto.logo = imageUrl
     }
@@ -108,7 +108,7 @@ export class BusinessService {
       throw new HttpException('Business not found', HttpStatus.NOT_FOUND);
     }
     // //upload image
-    if (updateBusinessDto.logo) {
+    if (updateBusinessDto.logo && typeof updateBusinessDto.logo === 'object') {
       const imageUrl = await uploadFirebaseFile(updateBusinessDto.logo, 'logos')
       updateBusinessDto.logo = imageUrl
     }

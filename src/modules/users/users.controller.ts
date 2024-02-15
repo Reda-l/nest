@@ -24,7 +24,7 @@ export class UsersController {
       createUserDto.password = Math.random().toString(36).slice(-8);
       createUserDto.isGeneratedPassword = true;
     }
-    const mongoUser = await this.usersService.create({ ...createUserDto, imageUrl: file ? file : undefined });
+    const mongoUser = await this.usersService.create({ ...createUserDto, imageUrl: file ? file : createUserDto.imageUrl });
 
     return {
       user: mongoUser,
@@ -53,7 +53,7 @@ export class UsersController {
     FileInterceptor('imageUrl')
   )
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @UploadedFile() file) {
-    return this.usersService.update(id, { ...updateUserDto, imageUrl: file ? file : undefined });
+    return this.usersService.update(id, { ...updateUserDto, imageUrl: file ? file : updateUserDto.imageUrl });
   }
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
   @Roles(Role.SuperAdmin, Role.Admin)

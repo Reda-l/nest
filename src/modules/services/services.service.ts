@@ -10,14 +10,14 @@ import { uploadFirebaseFile } from 'src/core/shared/firebaseUpload';
 export class ServicesService {
   constructor(
     @InjectModel('Service') public readonly serviceModel: Model<Service>,
-  ) {}
+  ) { }
 
   async create(
     createServiceDto: CreateServiceDto,
   ): Promise<Service | undefined> {
     try {
       // //upload image
-      if (createServiceDto.image) {
+      if (createServiceDto.image && typeof createServiceDto.image === 'object') {
         const imageUrl = await uploadFirebaseFile(
           createServiceDto.image,
           'spa-services',
@@ -152,7 +152,7 @@ export class ServicesService {
   async update(id: string, updateServiceDto: UpdateServiceDto) {
     try {
       // //upload image
-      if (updateServiceDto.image) {
+      if (updateServiceDto.image && typeof updateServiceDto.image === 'object') {
         const imageUrl = await uploadFirebaseFile(
           updateServiceDto.image,
           'spa-services',

@@ -44,7 +44,6 @@ export class EmailService {
 
         try {
             const info = await this.transporter.sendMail(mailOptions);
-            console.log('Email sent: ' + info.response);
         } catch (error) {
             console.error('Error sending email: ', error);
             throw error;

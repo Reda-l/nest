@@ -11,5 +11,6 @@ import { ActionsSchema } from './entities/action.entity';
   ],
   controllers: [ActionsController],
   providers: [ActionsService],
+  exports: [ActionsService],
 })
 export class ActionsModule { }

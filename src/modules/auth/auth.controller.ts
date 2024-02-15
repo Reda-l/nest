@@ -14,8 +14,6 @@ export class AuthController {
   async login(@Request() req, @Body() userDTO: CreateAuthDto) {
     try {
       const user = await this.userService.findByLogin(userDTO) as any;
-      console.log("🚀 ~ AuthController ~ login ~ user:", user)
-
       if (!user || user.status === 'REJECTED') {
         throw new HttpException('User account is disabled, please contact your administration or your lender', HttpStatus.UNAUTHORIZED);
       }

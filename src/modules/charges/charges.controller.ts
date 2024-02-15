@@ -16,17 +16,17 @@ export class ChargesController {
   constructor(private readonly chargesService: ChargesService) { }
 
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
-  @Roles(Role.SuperAdmin, Role.Admin,Role.Cassier)
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Cassier)
   @Post()
   @UseInterceptors(
     FileInterceptor('image')
   )
-  create(@Body() createChargeDto: CreateChargeDto,@UploadedFile() file : Express.Multer.File) {
-    return this.chargesService.create({ ...createChargeDto, image: file ? file : undefined });
+  create(@Body() createChargeDto: CreateChargeDto, @UploadedFile() file: Express.Multer.File) {
+    return this.chargesService.create({ ...createChargeDto, image: file ? file : createChargeDto.image });
   }
 
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
-  @Roles(Role.SuperAdmin, Role.Admin,Role.Cassier)
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Cassier)
   @Get()
   findAll(@Req() req: ReqOptions) {
     let query = req.query.s ? JSON.parse(req.query.s as string) : {};
@@ -34,7 +34,7 @@ export class ChargesController {
     return this.chargesService.findAll(query);
   }
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
-  @Roles(Role.SuperAdmin, Role.Admin,Role.Cassier)
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Cassier)
   @Get("stats")
   getAllStats(@Req() req: ReqOptions) {
     let query = req.query.s ? JSON.parse(req.query.s as string) : {};
@@ -42,7 +42,7 @@ export class ChargesController {
     return this.chargesService.getStats(query);
   }
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
-  @Roles(Role.SuperAdmin, Role.Admin,Role.Cassier)
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Cassier)
   @Get("top-stats")
   getTopPerformanceStats(@Req() req: ReqOptions) {
     let query = req.query.s ? JSON.parse(req.query.s as string) : {};
@@ -51,31 +51,31 @@ export class ChargesController {
   }
 
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
-  @Roles(Role.SuperAdmin, Role.Admin,Role.Cassier)
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Cassier)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.chargesService.findOne(id);
   }
 
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
-  @Roles(Role.SuperAdmin, Role.Admin,Role.Cassier)
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Cassier)
   @Get('/restore/:id')
   restoreAccount(@Param('id') id: string) {
     return this.chargesService.restore(id);
   }
 
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
-  @Roles(Role.SuperAdmin, Role.Admin,Role.Cassier)
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Cassier)
   @Patch(':id')
   @UseInterceptors(
     FileInterceptor('image')
   )
-  update(@Param('id') id: string, @Body() updateChargeDto: UpdateChargeDto,@UploadedFile() file : Express.Multer.File) {
-    return this.chargesService.update(id, { ...updateChargeDto, image: file ? file : undefined });
+  update(@Param('id') id: string, @Body() updateChargeDto: UpdateChargeDto, @UploadedFile() file: Express.Multer.File) {
+    return this.chargesService.update(id, { ...updateChargeDto, image: file ? file : updateChargeDto.image });
   }
 
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
-  @Roles(Role.SuperAdmin, Role.Admin,Role.Cassier)
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Cassier)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.chargesService.remove(id);

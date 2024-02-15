@@ -22,7 +22,7 @@ export class ServicesController {
     FileInterceptor('image')
   )
   create(@Body() createServiceDto: CreateServiceDto, @UploadedFile() file: Express.Multer.File) {
-    return this.servicesService.create({ ...createServiceDto, image: file ? file : undefined });
+    return this.servicesService.create({ ...createServiceDto, image: file ? file : createServiceDto.image });
   }
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
   @Roles(Role.SuperAdmin, Role.Admin, Role.Mannager)
@@ -54,7 +54,7 @@ export class ServicesController {
     FileInterceptor('image')
   )
   update(@Param('id') id: string, @Body() updateServiceDto: UpdateServiceDto, @UploadedFile() file: Express.Multer.File) {
-    return this.servicesService.update(id, { ...updateServiceDto, image: file ? file : undefined });
+    return this.servicesService.update(id, { ...updateServiceDto, image: file ? file : updateServiceDto.image });
   }
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
   @Roles(Role.SuperAdmin, Role.Admin, Role.Mannager)

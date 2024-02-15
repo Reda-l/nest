@@ -13,14 +13,15 @@ export class ChargesService {
     @InjectModel('Charge') public readonly chargeModel: Model<Charge>,
     @InjectModel('Appointment')
     public readonly appointmentModel: Model<Appointment>,
-  ) {}
+  ) { }
   // function to create Charge
   async create(createChargeDto: CreateChargeDto): Promise<Charge> {
     let createdCharge = new this.chargeModel(createChargeDto);
     let charge: Charge | undefined;
     try {
       // //upload image
-      if (createChargeDto.image) {
+      if (createChargeDto.image && typeof createChargeDto.image === 'object') {
+        console.log("savin......");
         const imageUrl = await uploadFirebaseFile(
           createChargeDto.image,
           'spa-charges',
@@ -333,7 +334,7 @@ export class ChargesService {
   ): Promise<Charge | undefined> {
     try {
       // //upload image
-      if (updateChargeDto.image) {
+      if (updateChargeDto.image&& typeof updateChargeDto.image === 'object') {
         const imageUrl = await uploadFirebaseFile(
           updateChargeDto.image,
           'spa-charges',

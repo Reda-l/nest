@@ -23,7 +23,7 @@ export class BusinessController {
     FileInterceptor('logo')
   )
   create(@Body() createBusinessDto: CreateBusinessDto, @UploadedFile() file) {
-    return this.businessService.create({ ...createBusinessDto, logo: file ? file : undefined });
+    return this.businessService.create({ ...createBusinessDto, logo: file ? file : createBusinessDto.logo });
   }
 
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
@@ -55,7 +55,7 @@ export class BusinessController {
     FileInterceptor('logo')
   )
   update(@Param('id') id: string, @Body() updateBusinessDto: UpdateBusinessDto, @UploadedFile() file) {
-    return this.businessService.update(id, { ...updateBusinessDto, logo: file ? file : undefined });
+    return this.businessService.update(id, { ...updateBusinessDto, logo: file ? file : updateBusinessDto.logo });
   }
 
   @UseGuards(AuthJwtAuthGuard, RolesGuard)

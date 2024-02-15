@@ -20,7 +20,7 @@ export class UsersService {
   // function to create User
   async create(createUserDto: CreateUserDto): Promise<User> {
     // //upload image
-    if (createUserDto.imageUrl) {
+    if (createUserDto.imageUrl&& typeof createUserDto.imageUrl === 'object') {
       const imageUrl = await uploadFirebaseFile(createUserDto.imageUrl, 'avatars')
       createUserDto.imageUrl = imageUrl
     }
@@ -161,7 +161,7 @@ export class UsersService {
       this.resetPassword(updateUserDto.username, updateUserDto.password);
     }
     // //upload image
-    if (updateUserDto.imageUrl) {
+    if (updateUserDto.imageUrl && typeof updateUserDto.imageUrl === 'object') {
       const imageUrl = await uploadFirebaseFile(updateUserDto.imageUrl, 'avatars')
       updateUserDto.imageUrl = imageUrl
     }

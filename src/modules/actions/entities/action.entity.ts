@@ -6,8 +6,7 @@ const ActionsSchema = new mongoose.Schema(
         type: { type: String },
         module: { type: String },
         entity: {
-            id: { type: String },
-            title: { type: String },
+            type: mongoose.Schema.Types.Mixed
         },
         user: { type: MongooseSchema.Types.ObjectId, ref: "User" }
     },
