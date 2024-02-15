@@ -16,7 +16,7 @@ export class ChargesService {
   ) {}
   // function to create Charge
   async create(createChargeDto: CreateChargeDto): Promise<Charge> {
-    let createdUser = new this.chargeModel(createChargeDto);
+    let createdCharge = new this.chargeModel(createChargeDto);
     let charge: Charge | undefined;
     try {
       // //upload image
@@ -25,9 +25,9 @@ export class ChargesService {
           createChargeDto.image,
           'spa-charges',
         );
-        createChargeDto.image = imageUrl;
+        createdCharge.image = imageUrl;
       }
-      charge = await createdUser.save();
+      charge = await createdCharge.save();
       if (charge) {
         return charge;
       } else {
@@ -37,6 +37,7 @@ export class ChargesService {
         );
       }
     } catch (error) {
+      console.log("🚀 ~ ChargesService ~ create ~ error:", error)
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }

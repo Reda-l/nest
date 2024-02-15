@@ -6,7 +6,7 @@ const chargeSchema = new mongoose.Schema(
     price: { type: Number },
     reason: { type: String },
     date: { type: Date, default: new Date() },
-    responsable: { type: String },
+    responsable:  { type: mongoose.Types.ObjectId, ref: "User" },
     image: { type: String },
     type :{ type: String }
   },

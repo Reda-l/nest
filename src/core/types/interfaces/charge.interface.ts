@@ -4,8 +4,9 @@ export class Charge extends Document {
     date: Date;
     name: string;
     price: number;
+    image: string
     reason: string;
-    createdBy? : any
-    deleted? : boolean
-    deleted_at? : Date
+    createdBy?: any
+    deleted?: boolean
+    deleted_at?: Date
 }
