@@ -14,10 +14,12 @@ export class ActionsInterceptor<T> implements NestInterceptor<T, Response<T>> {
         const req = context.switchToHttp().getRequest();
         const { method, originalUrl, user, params } = req;
         return next.handle().pipe(map(async data => {
-            if (["POST", "DELETE", "PATCH"].includes(method) && !originalUrl.includes("auth")) {
+            const match = originalUrl.match(/\/(\w+)/)
+            const moduleMatch = match ? match[1] : ""
+            if (["POST", "DELETE", "PATCH"].includes(method) && moduleMatch !== "auth") {
                 const action = await this.actionsService.create({
                     type: method,
-                    module: originalUrl.match(/\/(\w+)/)[0],
+                    module: moduleMatch,
                     entity: data,
                     user: user._id
                 })
