@@ -481,10 +481,22 @@ export class ChargesService {
       previousMonthTotalRevenue = previousMonthTotalRevenue.length > 0 ? previousMonthTotalRevenue[0].totalPrice : 0;
       const previousMonthProfit = previousMonthTotalRevenue - previousMonthTotalCharges;
       return {
-        charges: (currentMonthTotalCharges - previousMonthTotalCharges) / previousMonthTotalCharges * 100,
-        revenues: (currentMonthTotalRevenue - previousMonthTotalRevenue) / previousMonthTotalRevenue * 100,
-        profite: (currentMonthProfit - previousMonthProfit) / previousMonthProfit * 100,
-        clients: (currentMonthClients - previousMonthClients),
+        expenses: {
+          value : currentMonthTotalCharges,
+          percentage : (currentMonthTotalCharges - previousMonthTotalCharges) / previousMonthTotalCharges * 100,
+        },
+        revenues: {
+          value : currentMonthTotalRevenue,
+          percentage : (currentMonthTotalRevenue - previousMonthTotalRevenue) / previousMonthTotalRevenue * 100,
+        },
+        profite: {
+          value : currentMonthProfit,
+          percentage : (currentMonthProfit - previousMonthProfit) / previousMonthProfit * 100,
+        },
+        clients: {
+          value : (currentMonthClients - previousMonthClients),
+          percentage : (currentMonthClients - previousMonthClients) / previousMonthClients * 100
+        }
       }
     } catch (error) {
       console.log("🚀 ~ ChargesService ~ getProgressStats ~ error:", error)
