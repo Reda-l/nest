@@ -39,10 +39,10 @@ export class AppointmentsService {
           time: appointment.time,
           id: appointment._id,
         };
-        // send email to admins
-        await this.emailService.sendEmail(adminEmails, 'New Appointment Received', 'admin-confirmation', context);
-        // send email to clients
-        await this.emailService.sendEmail(bookingPersonEmail, 'Your Appointment Confirmation', 'client-confirmation', context);
+        // // send email to admins
+        // await this.emailService.sendEmail(adminEmails, 'New Appointment Received', 'admin-confirmation', context);
+        // // send email to clients
+        // await this.emailService.sendEmail(bookingPersonEmail, 'Your Appointment Confirmation', 'client-confirmation', context);
       }
 
       return appointment;

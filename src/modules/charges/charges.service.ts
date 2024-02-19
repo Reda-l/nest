@@ -199,10 +199,10 @@ export class ChargesService {
         _totalCharges += _totalChargesPerDay;
         _totalProfit += _totalProfitPerDay;
         totalsPerDay.push({
-          totalRevenue: _totalRevenuePerDay,
-          date: currentDate.toISOString().split('T')[0],
-          totalCharges: _totalChargesPerDay,
-          totalProfit: _totalProfitPerDay,
+          revenue: _totalRevenuePerDay,
+          time: currentDate.toISOString().split('T')[0],
+          expenses: _totalChargesPerDay,
+          profit: _totalProfitPerDay,
         });
         // Increment the current date by one day
         currentDate.setDate(currentDate.getDate() + 1);
@@ -303,6 +303,127 @@ export class ChargesService {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
+  async getProgressStats(options) {
+    try {
+      if (!options.filter?.startDate || !options.filter?.endDate) {
+        throw new HttpException(
+          'filter dates are missing',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      const { previousMonthEndDate, previousMonthStartDate } = this.getPreviousMonthDateRange(options.filter?.startDate, options.filter?.endDate)
+      options.filter.startDate = new Date(options.filter.startDate);
+      options.filter.endDate = new Date(options.filter.endDate);
+      const currentMonthTotalCharges = await this.chargeModel.aggregate([
+        {
+          $match: {
+            deleted: false,
+            date: {
+              $gte: options.filter.startDate, // Start date
+              $lte: options.filter.endDate  // End date
+            },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalPrice: { $sum: '$price' },
+          },
+        },
+        {
+          $project: {
+            _id: 0, // Exclude _id from the result
+            totalPrice: 1,
+          },
+        },
+      ]);
+      const currentMonthTotalRevenue = await this.appointmentModel.aggregate([
+        {
+          $match: {
+            deleted: false,
+            date: {
+              $gte: options.filter.startDate, // Start date
+              $lte: options.filter.endDate  // End date
+            },
+          },
+        },
+        {
+          $unwind: '$reservations',
+        },
+        {
+          $unwind: '$reservations.services',
+        },
+        {
+          $group: {
+            _id: null,
+            totalPrice: { $sum: '$reservations.services.price' },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            totalPrice: 1,
+          },
+        },
+      ]);
+      const previousMonthTotalCharges = await this.chargeModel.aggregate([
+        {
+          $match: {
+            deleted: false,
+            date: {
+              $gte: previousMonthStartDate, // Start date
+              $lte: previousMonthEndDate  // End date
+            },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalPrice: { $sum: '$price' },
+          },
+        },
+        {
+          $project: {
+            _id: 0, // Exclude _id from the result
+            totalPrice: 1,
+          },
+        },
+      ]);
+      const previousMonthTotalRevenue = await this.appointmentModel.aggregate([
+        {
+          $match: {
+            deleted: false,
+            date: {
+              $gte: previousMonthStartDate, // Start date
+              $lte: previousMonthEndDate  // End date
+            },
+          },
+        },
+        {
+          $unwind: '$reservations',
+        },
+        {
+          $unwind: '$reservations.services',
+        },
+        {
+          $group: {
+            _id: null,
+            totalPrice: { $sum: '$reservations.services.price' },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            totalPrice: 1,
+          },
+        },
+      ]);
+      return {currentMonthTotalCharges,currentMonthTotalRevenue,previousMonthTotalCharges,previousMonthTotalRevenue}
+    } catch (error) {
+      console.log("🚀 ~ ChargesService ~ getProgressStats ~ error:", error)
+
+    }
+  }
   // function to find one charge with id
   async findOne(id: String): Promise<Charge> {
     let options = {} as any;
@@ -334,7 +455,7 @@ export class ChargesService {
   ): Promise<Charge | undefined> {
     try {
       // //upload image
-      if (updateChargeDto.image&& typeof updateChargeDto.image === 'object') {
+      if (updateChargeDto.image && typeof updateChargeDto.image === 'object') {
         const imageUrl = await uploadFirebaseFile(
           updateChargeDto.image,
           'spa-charges',
@@ -424,6 +545,22 @@ export class ChargesService {
       }),
     );
   }
+  getPreviousMonthDateRange(startDate, endDate) {
+    // Calculate the start date of the previous month
+    const previousMonthStartDate = new Date(startDate);
+    previousMonthStartDate.setMonth(previousMonthStartDate.getMonth() - 1);
+
+    // Calculate the end date of the previous month
+    const previousMonthEndDate = new Date(endDate);
+    previousMonthEndDate.setMonth(previousMonthEndDate.getMonth() - 1);
+
+    return {
+      previousMonthStartDate,
+      previousMonthEndDate
+    };
+  }
+
+
   getStartAndEndOfWeek(weekNumber: number): {
     startOfWeek: Date;
     endOfWeek: Date;
