@@ -21,6 +21,7 @@ export class AppointmentsService {
     try {
       // Save the appointment record
       const appointment = await this.appointmentModel.create({
+        ...createAppointmentDto,
         date: createAppointmentDto.date,
         time: createAppointmentDto.time,
         reservations: createAppointmentDto.reservations,

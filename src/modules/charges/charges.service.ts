@@ -220,10 +220,20 @@ export class ChargesService {
   }
   async getTopPerformanceStats(options) {
     try {
+      if (!options.filter?.startDate || !options.filter?.endDate) {
+        throw new HttpException(
+          'filter dates are missing',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      const startDate = new Date(options.filter?.startDate);
+      const endDate = new Date(options.filter?.endDate);
       const topServices = await this.appointmentModel.aggregate([
         {
           $match: {
             deleted: false,
+            date: { $gte: startDate, $lte: endDate },
+
           },
         },
         {
@@ -251,6 +261,8 @@ export class ChargesService {
         {
           $match: {
             deleted: false,
+            date: { $gte: startDate, $lte: endDate },
+
           },
         },
         {
@@ -295,9 +307,36 @@ export class ChargesService {
           $limit: options.filter?.topRevenuesLimit || 5,
         },
       ]);
+      const topSources = await this.appointmentModel.aggregate([
+        {
+          $match: {
+            date: { $gte: startDate, $lte: endDate },
+            source: { $ne: null },
+            deleted: false,
+          }
+        },
+        {
+          $group: {
+            _id: "$source", // Group by source
+            count: { $sum: 1 } // Count occurrences
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            count: 1,
+            source: "$_id"
+          }
+        },
+        {
+          $sort: { count: -1 }
+        },
+
+      ]);
       return {
         topServices,
         topRevenuesPerDay,
+        topSources
       };
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
@@ -314,7 +353,7 @@ export class ChargesService {
       const { previousMonthEndDate, previousMonthStartDate } = this.getPreviousMonthDateRange(options.filter?.startDate, options.filter?.endDate)
       options.filter.startDate = new Date(options.filter.startDate);
       options.filter.endDate = new Date(options.filter.endDate);
-      const currentMonthTotalCharges = await this.chargeModel.aggregate([
+      let currentMonthTotalCharges: any | number = await this.chargeModel.aggregate([
         {
           $match: {
             deleted: false,
@@ -337,7 +376,7 @@ export class ChargesService {
           },
         },
       ]);
-      const currentMonthTotalRevenue = await this.appointmentModel.aggregate([
+      let currentMonthTotalRevenue: any | number = await this.appointmentModel.aggregate([
         {
           $match: {
             deleted: false,
@@ -356,17 +395,29 @@ export class ChargesService {
         {
           $group: {
             _id: null,
+            appointments: { $push: '$$ROOT' },
             totalPrice: { $sum: '$reservations.services.price' },
+            totalClients: { $addToSet: '$reservations.fullname' },
+            count: { $sum: 1 } // Count the total number of reservations
+
           },
         },
         {
           $project: {
             _id: 0,
             totalPrice: 1,
+            // appointments: 1,
+            totalClients: { $size: '$totalClients' },
+            totalCount: '$count'
           },
         },
       ]);
-      const previousMonthTotalCharges = await this.chargeModel.aggregate([
+      const currentMonthClients = currentMonthTotalRevenue.length > 0 ? currentMonthTotalRevenue[0].totalClients : 0;
+
+      currentMonthTotalRevenue = currentMonthTotalRevenue.length > 0 ? currentMonthTotalRevenue[0].totalPrice : 0;
+      currentMonthTotalCharges = currentMonthTotalCharges.length > 0 ? currentMonthTotalCharges[0].totalPrice : 0;
+      const currentMonthProfit = currentMonthTotalRevenue - currentMonthTotalCharges;
+      let previousMonthTotalCharges: any | number = await this.chargeModel.aggregate([
         {
           $match: {
             deleted: false,
@@ -389,7 +440,7 @@ export class ChargesService {
           },
         },
       ]);
-      const previousMonthTotalRevenue = await this.appointmentModel.aggregate([
+      let previousMonthTotalRevenue: any | number = await this.appointmentModel.aggregate([
         {
           $match: {
             deleted: false,
@@ -408,17 +459,33 @@ export class ChargesService {
         {
           $group: {
             _id: null,
+            appointments: { $push: '$$ROOT' },
             totalPrice: { $sum: '$reservations.services.price' },
+            totalClients: { $addToSet: '$reservations.fullname' },
+            count: { $sum: 1 } // Count the total number of reservations
+
           },
         },
         {
           $project: {
             _id: 0,
             totalPrice: 1,
+            // appointments: 1,
+            totalClients: { $size: '$totalClients' },
+            totalCount: '$count'
           },
         },
       ]);
-      return {currentMonthTotalCharges,currentMonthTotalRevenue,previousMonthTotalCharges,previousMonthTotalRevenue}
+      const previousMonthClients = previousMonthTotalRevenue.length > 0 ? previousMonthTotalRevenue[0].totalClients : 0;
+      previousMonthTotalCharges = previousMonthTotalCharges.length > 0 ? previousMonthTotalCharges[0].totalPrice : 0;
+      previousMonthTotalRevenue = previousMonthTotalRevenue.length > 0 ? previousMonthTotalRevenue[0].totalPrice : 0;
+      const previousMonthProfit = previousMonthTotalRevenue - previousMonthTotalCharges;
+      return {
+        charges: (currentMonthTotalCharges - previousMonthTotalCharges) / previousMonthTotalCharges * 100,
+        revenues: (currentMonthTotalRevenue - previousMonthTotalRevenue) / previousMonthTotalRevenue * 100,
+        profite: (currentMonthProfit - previousMonthProfit) / previousMonthProfit * 100,
+        clients: (currentMonthClients - previousMonthClients),
+      }
     } catch (error) {
       console.log("🚀 ~ ChargesService ~ getProgressStats ~ error:", error)
 

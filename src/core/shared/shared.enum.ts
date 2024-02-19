@@ -34,6 +34,10 @@ export enum Role {
   Mannager = 'MANAGER',
   Employee = 'EMPLOYEE',
 }
+export enum chargeType {
+  PERCENT = "PERCENT",
+  CURRENCY = "CURRENCY"
+}
 
 
 export function validateEmail(email) {
