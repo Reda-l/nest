@@ -13,7 +13,7 @@ export class ChargesService {
     @InjectModel('Charge') public readonly chargeModel: Model<Charge>,
     @InjectModel('Appointment')
     public readonly appointmentModel: Model<Appointment>,
-  ) { }
+  ) {}
   // function to create Charge
   async create(createChargeDto: CreateChargeDto): Promise<Charge> {
     let createdCharge = new this.chargeModel(createChargeDto);
@@ -21,7 +21,7 @@ export class ChargesService {
     try {
       // //upload image
       if (createChargeDto.image && typeof createChargeDto.image === 'object') {
-        console.log("savin......");
+        console.log('savin......');
         const imageUrl = await uploadFirebaseFile(
           createChargeDto.image,
           'spa-charges',
@@ -38,7 +38,7 @@ export class ChargesService {
         );
       }
     } catch (error) {
-      console.log("🚀 ~ ChargesService ~ create ~ error:", error)
+      console.log('🚀 ~ ChargesService ~ create ~ error:', error);
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
@@ -191,10 +191,8 @@ export class ChargesService {
           totalRevenuePerDay.length > 0 ? totalRevenuePerDay[0].totalPrice : 0;
         const _totalChargesPerDay =
           totalChargesPerDay.length > 0 ? totalChargesPerDay[0].totalPrice : 0;
-        const _totalProfitPerDay =
-          _totalRevenuePerDay - _totalChargesPerDay < 0
-            ? 0
-            : _totalRevenuePerDay - _totalChargesPerDay;
+        const _totalProfitPerDay = _totalRevenuePerDay - _totalChargesPerDay;
+
         _totalRevenue += _totalRevenuePerDay;
         _totalCharges += _totalChargesPerDay;
         _totalProfit += _totalProfitPerDay;
@@ -218,6 +216,7 @@ export class ChargesService {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
+
   async getTopPerformanceStats(options) {
     try {
       if (!options.filter?.startDate || !options.filter?.endDate) {
@@ -233,7 +232,6 @@ export class ChargesService {
           $match: {
             deleted: false,
             date: { $gte: startDate, $lte: endDate },
-
           },
         },
         {
@@ -262,7 +260,6 @@ export class ChargesService {
           $match: {
             deleted: false,
             date: { $gte: startDate, $lte: endDate },
-
           },
         },
         {
@@ -313,30 +310,29 @@ export class ChargesService {
             date: { $gte: startDate, $lte: endDate },
             source: { $ne: null },
             deleted: false,
-          }
+          },
         },
         {
           $group: {
-            _id: "$source", // Group by source
-            count: { $sum: 1 } // Count occurrences
-          }
+            _id: '$source', // Group by source
+            count: { $sum: 1 }, // Count occurrences
+          },
         },
         {
           $project: {
             _id: 0,
             count: 1,
-            source: "$_id"
-          }
+            source: '$_id',
+          },
         },
         {
-          $sort: { count: -1 }
+          $sort: { count: -1 },
         },
-
       ]);
       return {
         topServices,
         topRevenuesPerDay,
-        topSources
+        topSources,
       };
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
@@ -350,157 +346,193 @@ export class ChargesService {
           HttpStatus.BAD_REQUEST,
         );
       }
-      const { previousMonthEndDate, previousMonthStartDate } = this.getPreviousMonthDateRange(options.filter?.startDate, options.filter?.endDate)
+      const { previousMonthEndDate, previousMonthStartDate } =
+        this.getPreviousMonthDateRange(
+          options.filter?.startDate,
+          options.filter?.endDate,
+        );
       options.filter.startDate = new Date(options.filter.startDate);
       options.filter.endDate = new Date(options.filter.endDate);
-      let currentMonthTotalCharges: any | number = await this.chargeModel.aggregate([
-        {
-          $match: {
-            deleted: false,
-            date: {
-              $gte: options.filter.startDate, // Start date
-              $lte: options.filter.endDate  // End date
+      let currentMonthTotalCharges: any | number =
+        await this.chargeModel.aggregate([
+          {
+            $match: {
+              deleted: false,
+              date: {
+                $gte: options.filter.startDate, // Start date
+                $lte: options.filter.endDate, // End date
+              },
             },
           },
-        },
-        {
-          $group: {
-            _id: null,
-            totalPrice: { $sum: '$price' },
-          },
-        },
-        {
-          $project: {
-            _id: 0, // Exclude _id from the result
-            totalPrice: 1,
-          },
-        },
-      ]);
-      let currentMonthTotalRevenue: any | number = await this.appointmentModel.aggregate([
-        {
-          $match: {
-            deleted: false,
-            date: {
-              $gte: options.filter.startDate, // Start date
-              $lte: options.filter.endDate  // End date
+          {
+            $group: {
+              _id: null,
+              totalPrice: { $sum: '$price' },
             },
           },
-        },
-        {
-          $unwind: '$reservations',
-        },
-        {
-          $unwind: '$reservations.services',
-        },
-        {
-          $group: {
-            _id: null,
-            appointments: { $push: '$$ROOT' },
-            totalPrice: { $sum: '$reservations.services.price' },
-            totalClients: { $addToSet: '$reservations.fullname' },
-            count: { $sum: 1 } // Count the total number of reservations
+          {
+            $project: {
+              _id: 0, // Exclude _id from the result
+              totalPrice: 1,
+            },
+          },
+        ]);
+      let currentMonthTotalRevenue: any | number =
+        await this.appointmentModel.aggregate([
+          {
+            $match: {
+              deleted: false,
+              date: {
+                $gte: options.filter.startDate, // Start date
+                $lte: options.filter.endDate, // End date
+              },
+            },
+          },
+          {
+            $unwind: '$reservations',
+          },
+          {
+            $unwind: '$reservations.services',
+          },
+          {
+            $group: {
+              _id: null,
+              appointments: { $push: '$$ROOT' },
+              totalPrice: { $sum: '$reservations.services.price' },
+              totalClients: { $addToSet: '$reservations.fullname' },
+              count: { $sum: 1 }, // Count the total number of reservations
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              totalPrice: 1,
+              // appointments: 1,
+              totalClients: { $size: '$totalClients' },
+              totalCount: '$count',
+            },
+          },
+        ]);
+      const currentMonthClients =
+        currentMonthTotalRevenue.length > 0
+          ? currentMonthTotalRevenue[0].totalClients
+          : 0;
 
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-            totalPrice: 1,
-            // appointments: 1,
-            totalClients: { $size: '$totalClients' },
-            totalCount: '$count'
-          },
-        },
-      ]);
-      const currentMonthClients = currentMonthTotalRevenue.length > 0 ? currentMonthTotalRevenue[0].totalClients : 0;
-
-      currentMonthTotalRevenue = currentMonthTotalRevenue.length > 0 ? currentMonthTotalRevenue[0].totalPrice : 0;
-      currentMonthTotalCharges = currentMonthTotalCharges.length > 0 ? currentMonthTotalCharges[0].totalPrice : 0;
-      const currentMonthProfit = currentMonthTotalRevenue - currentMonthTotalCharges;
-      let previousMonthTotalCharges: any | number = await this.chargeModel.aggregate([
-        {
-          $match: {
-            deleted: false,
-            date: {
-              $gte: previousMonthStartDate, // Start date
-              $lte: previousMonthEndDate  // End date
+      currentMonthTotalRevenue =
+        currentMonthTotalRevenue.length > 0
+          ? currentMonthTotalRevenue[0].totalPrice
+          : 0;
+      currentMonthTotalCharges =
+        currentMonthTotalCharges.length > 0
+          ? currentMonthTotalCharges[0].totalPrice
+          : 0;
+      const currentMonthProfit =
+        currentMonthTotalRevenue - currentMonthTotalCharges;
+      let previousMonthTotalCharges: any | number =
+        await this.chargeModel.aggregate([
+          {
+            $match: {
+              deleted: false,
+              date: {
+                $gte: previousMonthStartDate, // Start date
+                $lte: previousMonthEndDate, // End date
+              },
             },
           },
-        },
-        {
-          $group: {
-            _id: null,
-            totalPrice: { $sum: '$price' },
-          },
-        },
-        {
-          $project: {
-            _id: 0, // Exclude _id from the result
-            totalPrice: 1,
-          },
-        },
-      ]);
-      let previousMonthTotalRevenue: any | number = await this.appointmentModel.aggregate([
-        {
-          $match: {
-            deleted: false,
-            date: {
-              $gte: previousMonthStartDate, // Start date
-              $lte: previousMonthEndDate  // End date
+          {
+            $group: {
+              _id: null,
+              totalPrice: { $sum: '$price' },
             },
           },
-        },
-        {
-          $unwind: '$reservations',
-        },
-        {
-          $unwind: '$reservations.services',
-        },
-        {
-          $group: {
-            _id: null,
-            appointments: { $push: '$$ROOT' },
-            totalPrice: { $sum: '$reservations.services.price' },
-            totalClients: { $addToSet: '$reservations.fullname' },
-            count: { $sum: 1 } // Count the total number of reservations
-
+          {
+            $project: {
+              _id: 0, // Exclude _id from the result
+              totalPrice: 1,
+            },
           },
-        },
-        {
-          $project: {
-            _id: 0,
-            totalPrice: 1,
-            // appointments: 1,
-            totalClients: { $size: '$totalClients' },
-            totalCount: '$count'
+        ]);
+      let previousMonthTotalRevenue: any | number =
+        await this.appointmentModel.aggregate([
+          {
+            $match: {
+              deleted: false,
+              date: {
+                $gte: previousMonthStartDate, // Start date
+                $lte: previousMonthEndDate, // End date
+              },
+            },
           },
-        },
-      ]);
-      const previousMonthClients = previousMonthTotalRevenue.length > 0 ? previousMonthTotalRevenue[0].totalClients : 0;
-      previousMonthTotalCharges = previousMonthTotalCharges.length > 0 ? previousMonthTotalCharges[0].totalPrice : 0;
-      previousMonthTotalRevenue = previousMonthTotalRevenue.length > 0 ? previousMonthTotalRevenue[0].totalPrice : 0;
-      const previousMonthProfit = previousMonthTotalRevenue - previousMonthTotalCharges;
+          {
+            $unwind: '$reservations',
+          },
+          {
+            $unwind: '$reservations.services',
+          },
+          {
+            $group: {
+              _id: null,
+              appointments: { $push: '$$ROOT' },
+              totalPrice: { $sum: '$reservations.services.price' },
+              totalClients: { $addToSet: '$reservations.fullname' },
+              count: { $sum: 1 }, // Count the total number of reservations
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              totalPrice: 1,
+              // appointments: 1,
+              totalClients: { $size: '$totalClients' },
+              totalCount: '$count',
+            },
+          },
+        ]);
+      const previousMonthClients =
+        previousMonthTotalRevenue.length > 0
+          ? previousMonthTotalRevenue[0].totalClients
+          : 0;
+      previousMonthTotalCharges =
+        previousMonthTotalCharges.length > 0
+          ? previousMonthTotalCharges[0].totalPrice
+          : 0;
+      previousMonthTotalRevenue =
+        previousMonthTotalRevenue.length > 0
+          ? previousMonthTotalRevenue[0].totalPrice
+          : 0;
+      const previousMonthProfit =
+        previousMonthTotalRevenue - previousMonthTotalCharges;
       return {
         expenses: {
-          value : currentMonthTotalCharges,
-          percentage : (currentMonthTotalCharges - previousMonthTotalCharges) / previousMonthTotalCharges * 100,
+          value: currentMonthTotalCharges,
+          percentage:
+            ((currentMonthTotalCharges - previousMonthTotalCharges) /
+              previousMonthTotalCharges) *
+            100,
         },
         revenues: {
-          value : currentMonthTotalRevenue,
-          percentage : (currentMonthTotalRevenue - previousMonthTotalRevenue) / previousMonthTotalRevenue * 100,
+          value: currentMonthTotalRevenue,
+          percentage:
+            ((currentMonthTotalRevenue - previousMonthTotalRevenue) /
+              previousMonthTotalRevenue) *
+            100,
         },
         profite: {
-          value : currentMonthProfit,
-          percentage : (currentMonthProfit - previousMonthProfit) / previousMonthProfit * 100,
+          value: currentMonthProfit,
+          percentage:
+            ((currentMonthProfit - previousMonthProfit) / previousMonthProfit) *
+            100,
         },
         clients: {
-          value : (currentMonthClients - previousMonthClients),
-          percentage : (currentMonthClients - previousMonthClients) / previousMonthClients * 100
-        }
-      }
+          value: currentMonthClients - previousMonthClients,
+          percentage:
+            ((currentMonthClients - previousMonthClients) /
+              previousMonthClients) *
+            100,
+        },
+      };
     } catch (error) {
-      console.log("🚀 ~ ChargesService ~ getProgressStats ~ error:", error)
-
+      console.log('🚀 ~ ChargesService ~ getProgressStats ~ error:', error);
     }
   }
   // function to find one charge with id
@@ -635,10 +667,9 @@ export class ChargesService {
 
     return {
       previousMonthStartDate,
-      previousMonthEndDate
+      previousMonthEndDate,
     };
   }
-
 
   getStartAndEndOfWeek(weekNumber: number): {
     startOfWeek: Date;
