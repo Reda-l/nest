@@ -31,7 +31,10 @@ export class ActionsService {
   //function to get All actions
   async findAll(options): Promise<any> {
     options.filter.deleted = false;
-    const query = this.actionModel.find(options.filter);
+    const query = this.actionModel.find(options.filter).populate({
+      path: 'user',
+      select: 'firstname lastname role email'
+  });
 
     if (options.sort) {
       query.sort(options.sort);
