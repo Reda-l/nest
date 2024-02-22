@@ -3,7 +3,7 @@ import * as mongoose from 'mongoose';
 import { Schema as MongooseSchema } from 'mongoose';
 import * as _ from 'lodash';
 import { User } from 'src/core/types/interfaces/user.interface';
-import { validateEmail, STATUS_OPTIONS, GENDER_OPTIONS, Role } from 'src/core/shared/shared.enum';
+import { validateEmail, STATUS_OPTIONS, GENDER_OPTIONS, Role, SALARY_OPTIONS } from 'src/core/shared/shared.enum';
 
 
 const UsersSchema = new mongoose.Schema(
@@ -46,6 +46,7 @@ const UsersSchema = new mongoose.Schema(
             default: STATUS_OPTIONS.NEW,
             required: false,
         },
+        statusFamille :{ type: String, required: false },
         gender: {
             type: String,
             enum: GENDER_OPTIONS,
@@ -59,7 +60,10 @@ const UsersSchema = new mongoose.Schema(
             required: true,
         },
 
-
+        adresse:{
+            type: String,
+            required: false,
+        },
         lastLoginAt: { type: Date, required: false },
         lastLogoutAt: { type: Date, required: false },
         emailVerified: { type: Boolean, default: false, required: false },
@@ -67,11 +71,32 @@ const UsersSchema = new mongoose.Schema(
 
         /* Basic information fields. */
         phoneNumber: { type: String, required: false },
-        imageUrl: {
+        cinFront: {
             type: String,
             required: false,
             default: null
         },
+        cinBack: {
+            type: String,
+            required: false,
+            default: null
+        },
+        empreint: {
+            type: String,
+            required: false,
+            default: null
+        },
+        salaryType:{
+            type: String,
+            enum:SALARY_OPTIONS,
+            required: false,
+            default: null
+        },
+        salary :{
+            type: Number,
+            required: false,
+            default: null
+        }
     },
     {
         timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

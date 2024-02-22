@@ -7,6 +7,7 @@ import {
     IsBoolean,
     IsObject,
     IsArray,
+    IsDecimal,
 } from 'class-validator';
 // import { GENDER_OPTIONS, STATUS_OPTIONS } from 'src/core/shared/shared.enum';
 import { User } from 'src/core/types/interfaces/user.interface';
@@ -54,7 +55,32 @@ export class CreateUserDto {
     @ApiProperty()
     @IsOptional()
     @IsString()
-    imageUrl?: string;
+    cinFront?: string;
+
+    @ApiProperty()
+    @IsOptional()
+    @IsString()
+    cinBack?: string;
+
+    @ApiProperty()
+    @IsOptional()
+    @IsString()
+    empreint?: string;
+
+    @ApiProperty()
+    @IsOptional()
+    @IsString()
+    salaryType?: string;
+
+    @ApiProperty()
+    @IsOptional()
+    @IsString()
+    statusFamille:string;
+
+    @ApiProperty()
+    @IsOptional()
+    @IsDecimal()
+    salary?: number;
 
     @ApiProperty()
     @IsOptional()

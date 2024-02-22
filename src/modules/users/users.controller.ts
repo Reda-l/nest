@@ -1,39 +1,74 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Request, Req, HttpCode, HttpException, HttpStatus, Res, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Request,
+  Req,
+  HttpCode,
+  HttpException,
+  HttpStatus,
+  Res,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  UploadedFiles,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Request as ReqOptions, Response } from 'express';
 import { AuthJwtAuthGuard } from '../../core/guards/auth.guard';
-import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+  FilesInterceptor,
+} from '@nestjs/platform-express';
 import { RolesGuard } from 'src/core/guards/roles.guard';
 import { Roles, Role } from 'src/core/shared/shared.enum';
-import { ApiTags ,ApiBearerAuth} from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('users')
 @ApiTags('Users')
 @ApiBearerAuth()
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @Post()
   @UseInterceptors(
-    FileInterceptor('imageUrl')
+    FileFieldsInterceptor([
+      { name: 'cinFront', maxCount: 1 },
+      { name: 'cinBack', maxCount: 1 },
+      { name: 'empreint', maxCount: 1 },
+    ]),
   )
-  async create(@Body() createUserDto: CreateUserDto, @Request() request, @UploadedFile() file) {
-    if (!createUserDto.password || createUserDto.password === undefined) {
-      createUserDto.password = Math.random().toString(36).slice(-8);
-      createUserDto.isGeneratedPassword = true;
-    }
-    const mongoUser = await this.usersService.create({ ...createUserDto, imageUrl: file ? file : createUserDto.imageUrl });
+  async create(
+    @UploadedFiles()
+    files: {
+      cinFront?: Express.Multer.File[];
+      cinBack?: Express.Multer.File[];
+      empreint?: Express.Multer.File[];
+    },
+    @Body() createUserDto: CreateUserDto,
+  ) {
+    // Call the service method to create user and pass the files
+    const user = await this.usersService.create(createUserDto, files);
 
+    // Return response
     return {
-      user: mongoUser,
-      password: createUserDto.password,
+      user :{
+        email : user.email,
+        role : user.role,
+      },
+      message : 'User created succesfully'
     };
   }
 
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
-  @Roles(Role.SuperAdmin, Role.Admin) 
+  @Roles(Role.SuperAdmin, Role.Admin)
   @Get()
   findAll(@Request() request, @Req() req: ReqOptions) {
     let query = req.query.s ? JSON.parse(req.query.s as string) : {};
@@ -50,10 +85,28 @@ export class UsersController {
   @Roles(Role.SuperAdmin, Role.Admin)
   @Patch(':id')
   @UseInterceptors(
-    FileInterceptor('imageUrl')
+    FileFieldsInterceptor([
+      { name: 'cinFront', maxCount: 1 },
+      { name: 'cinBack', maxCount: 1 },
+      { name: 'empreint', maxCount: 1 },
+    ]),
   )
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @UploadedFile() file) {
-    return this.usersService.update(id, { ...updateUserDto, imageUrl: file ? file : updateUserDto.imageUrl });
+  update(
+    @UploadedFiles()
+    files: {
+      cinFront?: Express.Multer.File[];
+      cinBack?: Express.Multer.File[];
+      empreint?: Express.Multer.File[];
+    },
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    
+  ) {
+    console.log("🚀 ~ UsersController ~ id:", id)
+    console.log("🚀 ~ UsersController ~ updateUserDto:", updateUserDto)
+    
+    console.log("🚀 ~ UsersController ~ files:", files)
+    return this.usersService.update(id, updateUserDto, files);
   }
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
   @Roles(Role.SuperAdmin, Role.Admin)
@@ -94,7 +147,8 @@ export class UsersController {
   bulkRemove(@Body('ids') ids: string[]) {
     if (!ids || ids.length === 0) {
       throw new HttpException('No users provided', HttpStatus.BAD_REQUEST);
-    } return this.usersService.bulkRemove(ids);
+    }
+    return this.usersService.bulkRemove(ids);
   }
   // bulk validate users
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
@@ -113,7 +167,7 @@ export class UsersController {
   bulkReject(@Body('ids') ids: string[]) {
     if (!ids || ids.length === 0) {
       throw new HttpException('No users provided', HttpStatus.BAD_REQUEST);
-    } return this.usersService.bulkReject(ids);
+    }
+    return this.usersService.bulkReject(ids);
   }
-
 }

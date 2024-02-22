@@ -13,33 +13,53 @@ import { CreateAuthDto } from '../auth/dto/create-auth.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectModel('User') public readonly userModel: Model<User>,
-  ) { }
+  constructor(@InjectModel('User') public readonly userModel: Model<User>) {}
 
   // function to create User
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    // //upload image
-    if (createUserDto.imageUrl&& typeof createUserDto.imageUrl === 'object') {
-      const imageUrl = await uploadFirebaseFile(createUserDto.imageUrl, 'avatars')
-      createUserDto.imageUrl = imageUrl
+  async create(
+    createUserDto: CreateUserDto,
+    files: {
+      cinFront?: Express.Multer.File[];
+      cinBack?: Express.Multer.File[];
+      empreint?: Express.Multer.File[];
+    },
+  ): Promise<User> {
+    // Check for duplicate email
+    const existingUser = await this.userModel
+      .findOne({ email: createUserDto.email })
+      .exec();
+    if (existingUser) {
+      throw new HttpException('Email is already taken.', HttpStatus.CONFLICT);
     }
-    let createdUser = new this.userModel(createUserDto);
-    let user: User | undefined;
-    // generate a salt
-    try {
-      createdUser.password = await bcrypt.hash(createdUser.password, 10);
-      user = await createdUser.save();
-      if (user) {
-        return user;
-      } else {
-        throw new HttpException(
-          'Error occured, cannot update user',
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-    } catch (error) {
-      throw this.evaluateMongoError(error, createUserDto);
+    // Upload files to Firebase
+    if (files.cinFront && files.cinFront.length > 0) {
+      createUserDto.cinFront = await uploadFirebaseFile(
+        files.cinFront[0],
+        'CIN',
+      );
+    }
+    if (files.cinBack && files.cinBack.length > 0) {
+      createUserDto.cinBack = await uploadFirebaseFile(files.cinBack[0], 'CIN');
+    }
+    if (files.empreint && files.empreint.length > 0) {
+      createUserDto.empreint = await uploadFirebaseFile(
+        files.empreint[0],
+        'Empreint',
+      );
+    }
+    // Hash password
+    createUserDto.password = await bcrypt.hash(createUserDto.password, 10);
+    let newUser: User;
+    // Create user in the database
+    const createdUser = new this.userModel(createUserDto);
+    newUser = await createdUser.save();
+    if (newUser) {
+      return newUser;
+    } else {
+      throw new HttpException(
+        'Error creating user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -87,7 +107,9 @@ export class UsersService {
     let options = {} as any;
     options.deleted = false;
 
-    let user = this.userModel.findById(id, options).select(['-password', '-createdBy', '-address']);
+    let user = this.userModel
+      .findById(id, options)
+      .select(['-password', '-createdBy', '-address']);
     const doesUserExit = this.userModel.exists({ _id: id });
 
     return doesUserExit
@@ -107,7 +129,7 @@ export class UsersService {
 
   // function find user with login data
   async findByLogin(userDTO: CreateAuthDto): Promise<User | undefined | User> {
-    const {  password, email } = userDTO;
+    const { password, email } = userDTO;
     let user;
 
     user = await this.userModel.findOne({ email });
@@ -148,59 +170,68 @@ export class UsersService {
   async update(
     id: string,
     updateUserDto: UpdateUserDto,
+    files?: any,
   ): Promise<User | undefined> {
+    try {
+      // Retrieve the existing user from the database
+      const existingUser = await this.userModel.findById(id).exec();
 
-    // Retrieve the existing user from the database
-    const existingUser = await this.userModel.findById(id).exec();
-
-    if (!existingUser) {
-      // Handle the case where the user with the provided ID does not exist
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    }
-    if (updateUserDto.password) {
-      this.resetPassword(updateUserDto.username, updateUserDto.password);
-    }
-    // //upload image
-    if (updateUserDto.imageUrl && typeof updateUserDto.imageUrl === 'object') {
-      const imageUrl = await uploadFirebaseFile(updateUserDto.imageUrl, 'avatars')
-      updateUserDto.imageUrl = imageUrl
-    }
-    // check if email already used
-    if (updateUserDto.email) {
-      const duplicateUser = await this.findOneByEmail(updateUserDto.email);
-      if (duplicateUser) {
-        throw new HttpException('Email is already taken.', HttpStatus.CONFLICT);
+      if (!existingUser) {
+        // Handle the case where the user with the provided ID does not exist
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       }
-    }
 
-    const fields: UpdateUserDto = {};
-    for (const key in updateUserDto) {
-      if (typeof updateUserDto[key] !== 'undefined') {
-        fields[key] = updateUserDto[key];
+      // Upload files to Firebase
+      if (files.cinFront && files.cinFront.length > 0) {
+        updateUserDto.cinFront = await uploadFirebaseFile(
+          files.cinFront[0],
+          'CIN',
+        );
       }
-    }
-
-    updateUserDto = fields;
-
-    if (Object.keys(updateUserDto).length > 0) {
-      let user: User | null = await this.userModel.findById(id);
-
-      if (user) {
-        user = await this.userModel.findByIdAndUpdate(id, updateUserDto, { new: true }).exec();
-        return user;
-      } else {
-        throw new HttpException(`Could not find user with id ${id}`, HttpStatus.NOT_FOUND);
+      if (files.cinBack && files.cinBack.length > 0) {
+        updateUserDto.cinBack = await uploadFirebaseFile(
+          files.cinBack[0],
+          'CIN',
+        );
       }
-    } else {
-      // Throw an error or return a response to indicate no updates were made
-      throw new HttpException('No fields to update.', HttpStatus.BAD_REQUEST);
+      if (files.empreint && files.empreint.length > 0) {
+        updateUserDto.empreint = await uploadFirebaseFile(
+          files.empreint[0],
+          'Empreint',
+        );
+      }
+
+      // Update user in the database
+      const updatedUser = await this.userModel.findByIdAndUpdate(
+        id,
+        updateUserDto,
+        { new: true },
+      );
+
+      if (!updatedUser) {
+        throw new HttpException(
+          `User with id ${id} not found`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      return updatedUser;
+    } catch (error) {
+      throw new HttpException(
+        `Error updating user: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   // soft delete user record by id ( set deleted to true and deleted_at to date now )
   async remove(id: string, authUser?: any): Promise<User | undefined> {
     const user = await this.userModel.findById(id);
-    if (authUser && authUser?.role == Role.Admin && user.role == Role.SuperAdmin) {
+    if (
+      authUser &&
+      authUser?.role == Role.Admin &&
+      user.role == Role.SuperAdmin
+    ) {
       throw new HttpException(
         `an admin cannot delete a super admin`,
         HttpStatus.NOT_FOUND,
@@ -214,7 +245,7 @@ export class UsersService {
     }
     // Perform the soft delete by setting deleted to true
     user.deleted = true;
-    user.deleted_at = new Date()
+    user.deleted_at = new Date();
     await user.save();
     return user;
   }
@@ -278,16 +309,14 @@ export class UsersService {
 
   // Returns a user by their unique email address or undefined
   async findOneByEmail(email: string): Promise<User | undefined> {
-    const user = await this.userModel
-      .findOne({ email: email })
-      .exec();
+    const user = await this.userModel.findOne({ email: email }).exec();
     if (user) return user;
     return undefined;
   }
 
   // function to bulk delete users
   async bulkRemove(ids: string[]): Promise<User[]> {
-    const objectIds = ids.map(id => new Types.ObjectId(id))
+    const objectIds = ids.map((id) => new Types.ObjectId(id));
     const users = await this.userModel.find({ _id: { $in: objectIds } });
     if (!users || users.length === 0) {
       throw new HttpException(
@@ -295,15 +324,17 @@ export class UsersService {
         HttpStatus.NOT_FOUND,
       );
     }
-    return Promise.all(users.map(async (user) => {
-      await this.remove(user._id)
-      return user;
-    }));
+    return Promise.all(
+      users.map(async (user) => {
+        await this.remove(user._id);
+        return user;
+      }),
+    );
   }
 
   // function to bulk validate users
   async validateUsers(ids: string[]): Promise<User[]> {
-    const objectIds = ids.map(id => new Types.ObjectId(id))
+    const objectIds = ids.map((id) => new Types.ObjectId(id));
     const users = await this.userModel.find({ _id: { $in: objectIds } });
     if (!users || users.length === 0) {
       throw new HttpException(
@@ -311,20 +342,22 @@ export class UsersService {
         HttpStatus.NOT_FOUND,
       );
     }
-    return Promise.all(users.map(async (user) => {
-      user.emailVerified = true;
-      user.status = 'VALIDATED';
-      await user.save();
-      return user;
-    }));
+    return Promise.all(
+      users.map(async (user) => {
+        user.emailVerified = true;
+        user.status = 'VALIDATED';
+        await user.save();
+        return user;
+      }),
+    );
   }
 
   // function that bulk reject given users
   async bulkReject(ids: string[]): Promise<User[]> {
-    const objectIds = ids.map(id => new Types.ObjectId(id));
+    const objectIds = ids.map((id) => new Types.ObjectId(id));
     const users = await this.userModel.updateMany(
       { _id: { $in: objectIds } },
-      { status: 'REJECTED' }
+      { status: 'REJECTED' },
     );
     if (!users) {
       throw new HttpException(
@@ -337,7 +370,7 @@ export class UsersService {
 
   // function to export all users in the DB
   async usersDataToCSV(): Promise<string> {
-    const users = await this.userModel.find()
+    const users = await this.userModel.find();
     const csvWriter = createObjectCsvWriter({
       path: 'csv-files/users.csv',
       header: [
@@ -358,11 +391,12 @@ export class UsersService {
 
   // helper function to restore all deleted users
   async restoreAllDeletedUsers(): Promise<any> {
-    const result = await this.userModel.updateMany({ deleted: true }, { $set: { deleted: false } });
-    return true
+    const result = await this.userModel.updateMany(
+      { deleted: true },
+      { $set: { deleted: false } },
+    );
+    return true;
   }
-
-
 
   /**
    * Reads a mongo database error and attempts to provide a better error message. If

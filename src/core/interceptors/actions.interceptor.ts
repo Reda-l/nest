@@ -21,7 +21,7 @@ export class ActionsInterceptor<T> implements NestInterceptor<T, Response<T>> {
                     type: method,
                     module: moduleMatch,
                     entity: data,
-                    user: user._id
+                    user: user?._id
                 })
             }
 
