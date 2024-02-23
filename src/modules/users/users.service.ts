@@ -182,19 +182,19 @@ export class UsersService {
       }
 
       // Upload files to Firebase
-      if (files.cinFront && files.cinFront.length > 0) {
+      if (files?.cinFront && files?.cinFront.length > 0) {
         updateUserDto.cinFront = await uploadFirebaseFile(
           files.cinFront[0],
           'CIN',
         );
       }
-      if (files.cinBack && files.cinBack.length > 0) {
+      if (files?.cinBack && files?.cinBack.length > 0) {
         updateUserDto.cinBack = await uploadFirebaseFile(
           files.cinBack[0],
           'CIN',
         );
       }
-      if (files.empreint && files.empreint.length > 0) {
+      if (files?.empreint && files?.empreint.length > 0) {
         updateUserDto.empreint = await uploadFirebaseFile(
           files.empreint[0],
           'Empreint',
