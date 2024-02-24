@@ -57,13 +57,13 @@ export class UsersController {
     // Call the service method to create user and pass the files
     const user = await this.usersService.create(createUserDto, files);
 
-    // Return response
+    // Remove the password field from the user object
+    const { password, ...userWithoutPassword } = user;
+
+    // Return response without the password field
     return {
-      user :{
-        email : user.email,
-        role : user.role,
-      },
-      message : 'User created succesfully'
+      user: userWithoutPassword,
+      message: 'User created successfully'
     };
   }
 

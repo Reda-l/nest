@@ -70,7 +70,10 @@ export class UsersService {
 
     if (options.sort) {
       query.sort(options.sort);
-    }
+    }else {
+      query.sort({ created_at: -1 }); // Default sort by created_at in descending order
+  }
+
 
     if (options.select && options.select !== '') {
       query.select(options.select);

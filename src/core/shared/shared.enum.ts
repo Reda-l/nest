@@ -20,7 +20,8 @@ export enum APPOINTMENT_STATUS_OPTIONS {
 export enum SALARY_OPTIONS {
   MONTHLY = 'MONTHLY',
   DAILY = 'DAILY',
-  HOURLY = 'HOURLY'
+  HOURLY = 'HOURLY',
+  NULL = 'null'
 }
 
 export enum APPOINTMENT_SOURCE {

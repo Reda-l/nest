@@ -90,7 +90,7 @@ const UsersSchema = new mongoose.Schema(
             type: String,
             enum:SALARY_OPTIONS,
             required: false,
-            default: null
+            default: SALARY_OPTIONS.NULL
         },
         salary :{
             type: Number,
