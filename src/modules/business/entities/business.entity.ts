@@ -1,13 +1,13 @@
 import mongoose from "mongoose";
 
 const BusinessSchema = new mongoose.Schema({
-    name: { type: String ,}, 
+    name: { type: String }, 
     logo: { type: String }, 
-    email: { type: String },
-    secondEmail: { type: String },
-    phoneNumber: { type: String },
-    linkGoodgleMap:{ type: String },
-    whatsappNumber: { type: String },
+    emails: [{ type: String }],
+    phoneNumbers: [{ type: String }],
+    linkGoogleMap: { type: String },
+    socialLinks: [{ type: String }],
+    whatsappNumbers: [{ type: String }],
     barCode: { type: String },
 },
     {
