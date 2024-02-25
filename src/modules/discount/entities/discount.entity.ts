@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { chargeType } from 'src/core/shared/shared.enum';
 
 const DiscountSchema = new mongoose.Schema(
   {
@@ -6,7 +7,7 @@ const DiscountSchema = new mongoose.Schema(
     description: { type: String },
     startDate: { type: Date },
     endDate: { type: Date },
-    type: { type: String },
+    type: { type: String, enum:chargeType },
     value: { type: String },
     status: { type: String },
   },

@@ -29,7 +29,8 @@ export class AppointmentsService {
         status: createAppointmentDto.status
       });
 
-
+      //TODO : booking details not required when source is local
+      // reservations name + gender not required when source local
       if (appointment) {
         // Send email
         const bookingPersonEmail = createAppointmentDto.bookingPersonDetails.email;
