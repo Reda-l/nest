@@ -15,11 +15,24 @@ export class PointagesService {
     createPointageDto: CreatePointageDto,
   ): Promise<Pointage | undefined> {
     try {
+      // Check if a pointage record already exists for the same day and employee
+      const existingPointage = await this.pointageModel.findOne({
+        employee: createPointageDto.employee,
+        startTime: { $gte: new Date(new Date(createPointageDto.startTime).setHours(0, 0, 0)), $lt: new Date(new Date(createPointageDto.startTime).setHours(23, 59, 59)) }
+      }).exec();
+  
+      if (existingPointage) {
+        throw new HttpException(
+          'Pointage record for the same day already exists',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+  
       // Save the record
       const pointage = await this.pointageModel.create(createPointageDto);
       return pointage;
     } catch (error) {
-      throw this.evaluateMongoError(error, createPointageDto);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -117,14 +130,16 @@ export class PointagesService {
       .exec();
 
     let daysWorked = null;
-
-    if (data[0]?.employee?.salaryType) {
+    let totalSalary = 0;
+    if (data[0]?.employee?.salaryType == 'DAILY') {
       daysWorked = await this.pointageModel.countDocuments(options.filter);
+      totalSalary = daysWorked * data[0]?.employee?.salary
     }
 
     return {
       data,
       daysWorked,
+      totalSalary
     };
   }
 

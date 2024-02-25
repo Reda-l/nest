@@ -196,8 +196,19 @@ export class ServicesService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} service`;
+  async remove(id: string): Promise<Service | undefined> {
+    const service = await this.serviceModel.findById(id);
+    if (!service) {
+      throw new HttpException(
+        `Could not find service with id ${id}`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    // Perform the soft delete by setting deleted to true
+    service.deleted = true;
+    service.deleted_at = new Date();
+    await service.save();
+    return service;
   }
 
   /**

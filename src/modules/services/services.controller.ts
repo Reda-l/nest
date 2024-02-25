@@ -57,9 +57,9 @@ export class ServicesController {
     return this.servicesService.update(id, { ...updateServiceDto, image: file ? file : updateServiceDto.image });
   }
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
-  @Roles(Role.SuperAdmin, Role.Admin, Role.Mannager)
+  @Roles(Role.SuperAdmin, Role.Admin)
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.servicesService.remove(+id);
+    return this.servicesService.remove(id);
   }
 }

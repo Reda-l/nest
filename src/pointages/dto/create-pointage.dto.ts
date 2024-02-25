@@ -1,5 +1,5 @@
 export class CreatePointageDto {
-    employeeId: string;
+    employee: string;
   startTime: Date;
   endTime?: Date;
 }

@@ -5,4 +5,6 @@ export class Service extends Document {
     slug: string;
     image?: string;
     type : string;
+    deleted?: boolean
+    deleted_at?: Date
 }
