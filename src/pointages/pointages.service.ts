@@ -16,18 +16,27 @@ export class PointagesService {
   ): Promise<Pointage | undefined> {
     try {
       // Check if a pointage record already exists for the same day and employee
-      const existingPointage = await this.pointageModel.findOne({
-        employee: createPointageDto.employee,
-        startTime: { $gte: new Date(new Date(createPointageDto.startTime).setHours(0, 0, 0)), $lt: new Date(new Date(createPointageDto.startTime).setHours(23, 59, 59)) }
-      }).exec();
-  
+      const existingPointage = await this.pointageModel
+        .findOne({
+          employee: createPointageDto.employee,
+          startTime: {
+            $gte: new Date(
+              new Date(createPointageDto.startTime).setHours(0, 0, 0),
+            ),
+            $lt: new Date(
+              new Date(createPointageDto.startTime).setHours(23, 59, 59),
+            ),
+          },
+        })
+        .exec();
+
       if (existingPointage) {
         throw new HttpException(
           'Pointage record for the same day already exists',
           HttpStatus.UNAUTHORIZED,
         );
       }
-  
+
       // Save the record
       const pointage = await this.pointageModel.create(createPointageDto);
       return pointage;
@@ -105,10 +114,26 @@ export class PointagesService {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
+
   // function to get all pointage of a specific user
   async getPointageByUserId(userId: string, options): Promise<any> {
     options.filter.deleted = false;
     options.filter.employee = userId;
+    if (options.filter?.startTime) {
+      // Extract the year and month from the date in the query string
+      const dateString = options.filter.startTime;
+      const [year, month] = dateString.split('-').map(Number);
+
+      // Calculate the first and last day of the specified month
+      const firstDayOfMonth = new Date(Date.UTC(year, month - 1, 1));
+      const lastDayOfMonth = new Date(Date.UTC(year, month, 0));
+
+      // Update the date filter to include the entire month
+      options.filter.startTime = {
+        $gte: firstDayOfMonth,
+        $lte: lastDayOfMonth,
+      };
+    }
 
     const query = this.pointageModel.find(options.filter);
 
@@ -133,13 +158,13 @@ export class PointagesService {
     let totalSalary = 0;
     if (data[0]?.employee?.salaryType == 'DAILY') {
       daysWorked = await this.pointageModel.countDocuments(options.filter);
-      totalSalary = daysWorked * data[0]?.employee?.salary
+      totalSalary = daysWorked * data[0]?.employee?.salary;
     }
 
     return {
       data,
       daysWorked,
-      totalSalary
+      totalSalary,
     };
   }
 
