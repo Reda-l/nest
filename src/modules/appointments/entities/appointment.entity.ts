@@ -60,8 +60,6 @@ const appointmentSchema = new mongoose.Schema(
     },
     source: {
       type: String,
-      enum: APPOINTMENT_SOURCE,
-      default: APPOINTMENT_SOURCE.LOCAL,
       required: false,
     },
   },

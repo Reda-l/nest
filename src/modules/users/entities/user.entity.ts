@@ -71,6 +71,9 @@ const UsersSchema = new mongoose.Schema(
 
         /* Basic information fields. */
         phoneNumber: { type: String, required: false },
+        emergencyName: { type: String, required: false },
+        emergencyPhone: { type: String, required: false },
+
         cinFront: {
             type: String,
             required: false,

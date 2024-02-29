@@ -21,6 +21,8 @@ export enum SALARY_OPTIONS {
   MONTHLY = 'MONTHLY',
   DAILY = 'DAILY',
   HOURLY = 'HOURLY',
+  WEEKLY = 'WEEKLY',
+  BIWEEKLY = 'BIWEEKLY',
   NULL = 'null'
 }
 
