@@ -24,44 +24,35 @@ export class UsersService {
       empreint?: Express.Multer.File[];
     },
   ): Promise<User> {
-    // Check for duplicate email
-    const existingUser = await this.userModel
-      .findOne({ email: createUserDto.email })
-      .exec();
-    if (existingUser) {
-      throw new HttpException('Email is already taken.', HttpStatus.CONFLICT);
-    }
-    // Upload files to Firebase
-    if (files.cinFront && files.cinFront.length > 0) {
-      createUserDto.cinFront = await uploadFirebaseFile(
-        files.cinFront[0],
-        'CIN',
-      );
-    }
-    if (files.cinBack && files.cinBack.length > 0) {
-      createUserDto.cinBack = await uploadFirebaseFile(files.cinBack[0], 'CIN');
-    }
-    if (files.empreint && files.empreint.length > 0) {
-      createUserDto.empreint = await uploadFirebaseFile(
-        files.empreint[0],
-        'Empreint',
-      );
-    }
-    // Hash password
-    createUserDto.password = await bcrypt.hash(createUserDto.password, 10);
-    let newUser: User;
-    // Create user in the database
-    const createdUser = new this.userModel(createUserDto);
-    newUser = await createdUser.save();
-    if (newUser) {
+    try {
+      // Check for duplicate email
+      const existingUser = await this.userModel.findOne({ email: createUserDto.email }).exec();
+      if (existingUser) {
+        throw new HttpException('Email is already taken.', HttpStatus.CONFLICT);
+      }
+    
+      // Upload files to Firebase
+      if (files.cinFront && files.cinFront.length > 0) {
+        createUserDto.cinFront = await uploadFirebaseFile(files.cinFront[0], 'CIN');
+      }
+      if (files.cinBack && files.cinBack.length > 0) {
+        createUserDto.cinBack = await uploadFirebaseFile(files.cinBack[0], 'CIN');
+      }
+      if (files.empreint && files.empreint.length > 0) {
+        createUserDto.empreint = await uploadFirebaseFile(files.empreint[0], 'Empreint');
+      }
+    
+      // Hash password
+      createUserDto.password = await bcrypt.hash(createUserDto.password, 10);
+    
+      // Create user in the database
+      const newUser = await this.userModel.create(createUserDto);
       return newUser;
-    } else {
-      throw new HttpException(
-        'Error creating user',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+    } catch (error) {
+      throw this.evaluateMongoError(error, createUserDto);
     }
   }
+  
 
   //function to get All users
   async findAll(options): Promise<UserRO> {
