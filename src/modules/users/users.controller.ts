@@ -56,10 +56,7 @@ export class UsersController {
   ) {
     // Call the service method to create user and pass the files
     const user = await this.usersService.create(createUserDto, files);
-    return {
-      user,
-      message: 'User created successfully'
-    };
+    return user
   }
 
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
