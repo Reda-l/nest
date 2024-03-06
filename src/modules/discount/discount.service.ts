@@ -198,6 +198,7 @@ export class DiscountService {
 
     if (discount.status === 'ACTIVE') {
       return {
+        discount,
         message : 'VALID_DISCOUNT',        
       }
     } else if (discount.status === 'INACTIVE') {
