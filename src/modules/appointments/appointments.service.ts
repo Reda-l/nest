@@ -47,7 +47,7 @@ export class AppointmentsService {
         // await this.emailService.sendEmail(bookingPersonEmail, 'Your Appointment Confirmation', 'client-confirmation', context);
       }
 
-      return appointment;
+      return this.findOne(appointment._id);
     } catch (error) {
       console.log("🚀 ~ file: appointments.service.ts:75 ~ AppointmentsService ~ create ~ error:", error)
       throw this.evaluateMongoError(error, createAppointmentDto);
