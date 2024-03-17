@@ -84,4 +84,10 @@ export class CreateAppointmentDto {
     @ApiProperty()
     @IsOptional()
     status?: string; // Ensure the status field adheres to the provided options
+    @ApiProperty()
+    @IsOptional()
+    deposit: Number;
+    @ApiProperty()
+    @IsOptional()
+    commission: any;
 }

@@ -19,8 +19,8 @@ const appointmentSchema = new mongoose.Schema(
         services: [
           {
             _id: { type: String },
-            name: { type: String, required : true },
-            price: { type: Number,required : true },
+            name: { type: String, required: true },
+            price: { type: Number, required: true },
             image: { type: String },
             type: { type: String },
             time: { type: Number },
@@ -61,6 +61,11 @@ const appointmentSchema = new mongoose.Schema(
     source: {
       type: String,
       required: false,
+    },
+    deposit: { type: Number, required: false },
+    commission: {
+      type: { type: String, required: false }, // type Number or %
+      value: { type: Number, required: false },
     },
   },
   {
