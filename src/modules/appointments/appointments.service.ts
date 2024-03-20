@@ -169,7 +169,7 @@ export class AppointmentsService {
           fullName: appointment.bookingPersonDetails.fullname,
         }; // Add any additional data needed for the email template
 
-        await this.emailService.sendEmail(bookingPersonEmail, emailSubject, emailTemplate, context);
+        // await this.emailService.sendEmail(bookingPersonEmail, emailSubject, emailTemplate, context);
       }
 
       // If the status is set to 'CONFIRMED', send an email to the Admins
@@ -183,7 +183,7 @@ export class AppointmentsService {
           time: appointment.time,
         }; // Add any additional data needed for the email template
 
-        await this.emailService.sendEmail(adminEmails, emailSubject, emailTemplate, context);
+        // await this.emailService.sendEmail(adminEmails, emailSubject, emailTemplate, context);
       }
 
       return appointment;
