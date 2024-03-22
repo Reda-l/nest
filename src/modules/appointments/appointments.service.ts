@@ -12,12 +12,15 @@ import { Service } from 'src/core/types/interfaces/service.interface';
 @Injectable()
 export class AppointmentsService {
   constructor(
-    @InjectModel('Appointment') public readonly appointmentModel: Model<Appointment>,
+    @InjectModel('Appointment')
+    public readonly appointmentModel: Model<Appointment>,
     @InjectModel('Service') public readonly serviceModel: Model<Service>,
     private userService: UsersService,
-    private emailService: EmailService
-  ) { }
-  async create(createAppointmentDto: CreateAppointmentDto): Promise<Appointment | undefined> {
+    private emailService: EmailService,
+  ) {}
+  async create(
+    createAppointmentDto: CreateAppointmentDto,
+  ): Promise<Appointment | undefined> {
     try {
       // Save the appointment record
       const appointment = await this.appointmentModel.create({
@@ -26,18 +29,27 @@ export class AppointmentsService {
         time: createAppointmentDto.time,
         reservations: createAppointmentDto.reservations,
         bookingPersonDetails: createAppointmentDto.bookingPersonDetails,
-        status: createAppointmentDto.status
+        status: createAppointmentDto.status,
       });
 
       //TODO : booking details not required when source is local
       // reservations name + gender not required when source local
       if (appointment) {
         // Send email
-        const bookingPersonEmail = createAppointmentDto.bookingPersonDetails.email;
-        const adminEmails = ['mazraoui.1996@gmail.com', 'contact@spadesepices.com']
+        const bookingPersonEmail =
+          createAppointmentDto.bookingPersonDetails.email;
+        const adminEmails = [
+          'mazraoui.1996@gmail.com',
+          'contact@spadesepices.com',
+        ];
         const context = {
           fullName: appointment.bookingPersonDetails.fullname,
-          date: appointment.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+          date: appointment.date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          }),
           time: appointment.time,
           id: appointment._id,
         };
@@ -49,11 +61,13 @@ export class AppointmentsService {
 
       return this.findOne(appointment._id);
     } catch (error) {
-      console.log("🚀 ~ file: appointments.service.ts:75 ~ AppointmentsService ~ create ~ error:", error)
+      console.log(
+        '🚀 ~ file: appointments.service.ts:75 ~ AppointmentsService ~ create ~ error:',
+        error,
+      );
       throw this.evaluateMongoError(error, createAppointmentDto);
     }
   }
-
 
   // function to get all appointments
   async findAll(options): Promise<any> {
@@ -62,9 +76,9 @@ export class AppointmentsService {
 
     if (options.sort) {
       query.sort(options.sort);
-    }else {
+    } else {
       query.sort({ created_at: -1 }); // Default sort by created_at in descending order
-  }
+    }
 
     if (options.select && options.select !== '') {
       query.select(options.select);
@@ -84,7 +98,7 @@ export class AppointmentsService {
       .populate({
         path: 'discount',
         model: 'Discount',
-        select: '-deleted -created_at -updated_at -__v'
+        select: '-deleted -created_at -updated_at -__v',
       })
       .exec();
 
@@ -110,12 +124,12 @@ export class AppointmentsService {
         .populate({
           path: 'updatedBy',
           select: '_id firstname lastname username',
-          model: 'User'
+          model: 'User',
         })
         .populate({
           path: 'discount',
           model: 'Discount',
-          select: '-deleted -created_at -updated_at -__v'
+          select: '-deleted -created_at -updated_at -__v',
         })
         .exec();
       if (!appointment) {
@@ -131,8 +145,11 @@ export class AppointmentsService {
     }
   }
 
-
-  async update(id: string, updateAppointmentDto: UpdateAppointmentDto, authenticatedUser?: User): Promise<Appointment | undefined> {
+  async update(
+    id: string,
+    updateAppointmentDto: UpdateAppointmentDto,
+    authenticatedUser?: User,
+  ): Promise<Appointment | undefined> {
     if (Object.entries(updateAppointmentDto).length > 0) {
       // Check if the status is set to 'CANCELED'
       const isCanceled = updateAppointmentDto.status === 'CANCELED';
@@ -140,16 +157,20 @@ export class AppointmentsService {
       const isConfirmed = updateAppointmentDto.status === 'CONFIRMED';
 
       const appointment = await this.appointmentModel
-        .findByIdAndUpdate(id, { ...updateAppointmentDto, updatedBy: authenticatedUser?._id }, { new: true })
+        .findByIdAndUpdate(
+          id,
+          { ...updateAppointmentDto, updatedBy: authenticatedUser?._id },
+          { new: true },
+        )
         .populate({
           path: 'updatedBy',
           select: '_id firstname lastname username',
-          model: 'User'
+          model: 'User',
         })
         .populate({
           path: 'discount',
           model: 'Discount',
-          select: '-deleted -created_at -updated_at -__v'
+          select: '-deleted -created_at -updated_at -__v',
         })
         .exec();
 
@@ -174,12 +195,20 @@ export class AppointmentsService {
 
       // If the status is set to 'CONFIRMED', send an email to the Admins
       if (isConfirmed) {
-        const adminEmails = ['mazraoui.1996@gmail.com', 'contact@spadesepices.com'];
+        const adminEmails = [
+          'mazraoui.1996@gmail.com',
+          'contact@spadesepices.com',
+        ];
         const emailSubject = 'Confirmed Appointment';
         const emailTemplate = 'confirm-appointment';
         const context = {
           fullName: appointment.bookingPersonDetails.fullname,
-          date: appointment.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+          date: appointment.date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          }),
           time: appointment.time,
         }; // Add any additional data needed for the email template
 
@@ -195,9 +224,11 @@ export class AppointmentsService {
     }
   }
 
-
   // soft delete Appointment record by id ( set deleted to true and deleted_at to date now )
-  async remove(id: string, authenticatedUser?: User): Promise<Appointment | undefined> {
+  async remove(
+    id: string,
+    authenticatedUser?: User,
+  ): Promise<Appointment | undefined> {
     const appointment = await this.appointmentModel
       .findByIdAndUpdate(
         id,
@@ -205,12 +236,12 @@ export class AppointmentsService {
           deleted: true, // field to mark soft deletion
           updatedBy: authenticatedUser?._id,
         },
-        { new: true }
+        { new: true },
       )
       .populate({
         path: 'updatedBy',
         select: '_id firstname lastname username',
-        model: 'User'
+        model: 'User',
       })
       .exec();
 
@@ -224,6 +255,43 @@ export class AppointmentsService {
     return appointment;
   }
 
+  //function to get and calculate commision with source
+  async getAppointmentCommision(options) {
+    try {
+      if (!options.filter?.startDate || !options.filter?.endDate) {
+        throw new HttpException(
+          'filter dates are missing',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      const startDate = new Date(options.filter?.startDate);
+      const endDate = new Date(options.filter?.endDate);
+
+      const appointments = await this.appointmentModel.find({
+        $and: [
+          { 'commission.value': { $exists: true } },
+          { 'date': { $gte: startDate, $lte: endDate } },
+          { deleted: false },
+        ],
+      });
+      const commissionData = appointments.map(appointment => {
+        let commissionValue = 0;
+        if (appointment.commission.type === '%') {
+          const totalServicePrice = appointment.reservations.reduce((total, reservation) => {
+            return total + reservation.services.reduce((subtotal, service) => subtotal + service.price, 0);
+          }, 0);
+          commissionValue = (totalServicePrice * appointment.commission.value) / 100;
+        } else {
+          commissionValue = appointment.commission.value;
+        }
+        return { source: appointment.source, value: commissionValue };
+      });
+  
+      return commissionData;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
+  }
 
   /**
    * Reads a mongo database error and attempts to provide a better error message. If

@@ -37,6 +37,15 @@ export class AppointmentsController {
 
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
   @Roles(Role.SuperAdmin, Role.Admin,Role.Mannager)
+  @Get('commission')
+  findAppointmentCommission(@Request() request, @Req() req: ReqOptions) {
+    let query = req.query.s ? JSON.parse(req.query.s as string) : {};
+    if (!query.filter) query.filter = {};
+    return this.appointmentsService.getAppointmentCommision(query);
+  }
+
+  @UseGuards(AuthJwtAuthGuard, RolesGuard)
+  @Roles(Role.SuperAdmin, Role.Admin,Role.Mannager)
   @Get()
   findAll(@Request() request, @Req() req: ReqOptions) {
     let query = req.query.s ? JSON.parse(req.query.s as string) : {};
@@ -66,4 +75,6 @@ export class AppointmentsController {
     const authenticated = request.user
     return this.appointmentsService.remove(id, authenticated);
   }
+
+  
 }

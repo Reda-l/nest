@@ -6,5 +6,7 @@ export class Appointment extends Document {
     time: string;
     reservations: any;
     bookingPersonDetails: any;
-    createdBy? : any
+    createdBy? : any;
+    commission?: any;
+    source : string;
 }
