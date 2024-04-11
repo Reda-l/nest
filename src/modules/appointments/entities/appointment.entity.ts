@@ -57,7 +57,7 @@ const appointmentSchema = new mongoose.Schema(
     payment: {
       paymentMethod: { type: String, required: false },
       currency: { type: String, required: false },
-      devise : { type: Number, required: false },
+      devise: { type: Number, required: false },
     },
     source: {
       type: String,
@@ -67,6 +67,7 @@ const appointmentSchema = new mongoose.Schema(
     commission: {
       type: { type: String, required: false }, // type Number or %
       value: { type: Number, required: false },
+      payed: { type: Boolean, default: false },
     },
   },
   {
