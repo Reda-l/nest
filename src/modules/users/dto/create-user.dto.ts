@@ -65,6 +65,12 @@ export class CreateUserDto {
     @ApiProperty()
     @IsOptional()
     @IsString()
+    cnssCart?: string;
+
+
+    @ApiProperty()
+    @IsOptional()
+    @IsString()
     empreint?: string;
 
     @ApiProperty()

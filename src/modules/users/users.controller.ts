@@ -43,6 +43,8 @@ export class UsersController {
       { name: 'cinFront', maxCount: 1 },
       { name: 'cinBack', maxCount: 1 },
       { name: 'empreint', maxCount: 1 },
+      { name: 'cnssCart', maxCount: 1 },
+
     ]),
   )
   async create(
@@ -51,6 +53,7 @@ export class UsersController {
       cinFront?: Express.Multer.File[];
       cinBack?: Express.Multer.File[];
       empreint?: Express.Multer.File[];
+      cnssCart?:Express.Multer.File[];
     },
     @Body() createUserDto: CreateUserDto,
   ) {
@@ -81,6 +84,7 @@ export class UsersController {
       { name: 'cinFront', maxCount: 1 },
       { name: 'cinBack', maxCount: 1 },
       { name: 'empreint', maxCount: 1 },
+      { name: 'cnssCart', maxCount: 1 },
     ]),
   )
   update(
@@ -89,6 +93,7 @@ export class UsersController {
       cinFront?: Express.Multer.File[];
       cinBack?: Express.Multer.File[];
       empreint?: Express.Multer.File[];
+      cnssCart?:Express.Multer.File[];
     },
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,

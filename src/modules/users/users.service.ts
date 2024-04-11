@@ -22,6 +22,7 @@ export class UsersService {
       cinFront?: Express.Multer.File[];
       cinBack?: Express.Multer.File[];
       empreint?: Express.Multer.File[];
+      cnssCart?:Express.Multer.File[];
     },
   ): Promise<User> {
     try {
@@ -40,6 +41,9 @@ export class UsersService {
       }
       if (files.empreint && files.empreint.length > 0) {
         createUserDto.empreint = await uploadFirebaseFile(files.empreint[0], 'Empreint');
+      }
+      if (files.cnssCart && files.cnssCart.length > 0) {
+        createUserDto.cnssCart = await uploadFirebaseFile(files.cnssCart[0], 'Cnss');
       }
     
       // Hash password
@@ -192,6 +196,12 @@ export class UsersService {
         updateUserDto.empreint = await uploadFirebaseFile(
           files.empreint[0],
           'Empreint',
+        );
+      }
+      if (files?.cnssCart && files?.cnssCart.length > 0) {
+        updateUserDto.cnssCart = await uploadFirebaseFile(
+          files.cnssCart[0],
+          'Cnss',
         );
       }
 

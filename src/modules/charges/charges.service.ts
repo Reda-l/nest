@@ -377,6 +377,7 @@ export class ChargesService {
             },
           },
         ]);
+
       let currentMonthTotalRevenue: any | number =
         await this.appointmentModel.aggregate([
           {
@@ -420,7 +421,11 @@ export class ChargesService {
 
       currentMonthTotalRevenue =
         currentMonthTotalRevenue.length > 0
-          ? currentMonthTotalRevenue[0].totalPrice
+          ? currentMonthTotalRevenue[0].totalPrice -
+            (await this.getTotalDiscount(
+              options.filter.startDate,
+              options.filter.endDate,
+            ))
           : 0;
       currentMonthTotalCharges =
         currentMonthTotalCharges.length > 0
@@ -498,7 +503,11 @@ export class ChargesService {
           : 0;
       previousMonthTotalRevenue =
         previousMonthTotalRevenue.length > 0
-          ? previousMonthTotalRevenue[0].totalPrice
+          ? previousMonthTotalRevenue[0].totalPrice -
+          (await this.getTotalDiscount(
+            options.filter.startDate,
+            options.filter.endDate,
+          ))
           : 0;
       const previousMonthProfit =
         previousMonthTotalRevenue - previousMonthTotalCharges;
@@ -692,5 +701,44 @@ export class ChargesService {
     endDate.setHours(23, 59, 59, 999);
 
     return { startOfWeek: startDate, endOfWeek: endDate };
+  }
+
+  async getTotalDiscount(startDate: Date, endDate: Date) {
+    let totalDiscount = 0;
+
+    // Fetch appointments between the given dates and populate the 'discount' field
+    const appointments = await this.appointmentModel
+      .find({
+        deleted: false,
+        date: {
+          $gte: startDate,
+          $lte: endDate,
+        },
+      })
+      .populate('discount');
+
+    // Iterate through each appointment
+    for (const appointment of appointments) {
+      let totalPrice = 0;
+
+      // Calculate total price from reservations
+      for (const reservation of appointment.reservations) {
+        for (const service of reservation.services) {
+          totalPrice += service.price;
+        }
+      }
+
+      // Check if discount exists
+      if (appointment.discount) {
+        // Calculate discount amount based on discount type
+        if (appointment.discount.type === 'PERCENT') {
+          totalDiscount += (totalPrice * appointment.discount.value) / 100;
+        } else if (appointment.discount.type === 'CURRENCY') {
+          totalDiscount += appointment.discount.value;
+        }
+      }
+    }
+    return totalDiscount | 0;
+    // console.log("🚀 ~ ChargesService ~ getTotalDiscount ~ totalDiscount:", totalDiscount)
   }
 }
