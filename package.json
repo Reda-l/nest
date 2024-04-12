@@ -42,6 +42,7 @@
     "firebase-admin": "^12.0.0",
     "handlebars": "^4.7.8",
     "mailgen": "^2.0.28",
+    "moment": "^2.30.1",
     "mongoose": "^7.4.1",
     "mongoose-auto-increment": "^5.0.1",
     "mongoose-delete": "^1.0.1",

@@ -8,6 +8,7 @@ import { UsersService } from '../users/users.service';
 import { EmailService } from 'src/core/shared/email.service';
 import { User } from 'src/core/types/interfaces/user.interface';
 import { Service } from 'src/core/types/interfaces/service.interface';
+import { parseDate } from 'src/core/shared/date.utils';
 
 @Injectable()
 export class AppointmentsService {
@@ -72,6 +73,18 @@ export class AppointmentsService {
   // function to get all appointments
   async findAll(options): Promise<any> {
     options.filter.deleted = false;
+    // Parse date strings in DD-MM-YYYY format into Date objects
+    if (options.filter?.date) {
+      for (const operator in options.filter.date) {
+        if (options.filter.date.hasOwnProperty(operator)) {
+          if (['$gte', '$gt', '$lte', '$lt'].includes(operator)) {
+            options.filter.date[operator] = parseDate(
+              options.filter.date[operator],
+            );
+          }
+        }
+      }
+    }
     const query = this.appointmentModel.find(options.filter);
 
     if (options.sort) {

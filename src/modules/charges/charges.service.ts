@@ -6,6 +6,8 @@ import { Model, Types } from 'mongoose';
 import { Charge } from 'src/core/types/interfaces/charge.interface';
 import { Appointment } from 'src/core/types/interfaces/appointment.interface';
 import { uploadFirebaseFile } from 'src/core/shared/firebaseUpload';
+import { formatDate, parseDate } from 'src/core/shared/date.utils';
+import * as moment from 'moment'; 
 
 @Injectable()
 export class ChargesService {
@@ -45,6 +47,18 @@ export class ChargesService {
   //function to get All charges
   async findAll(options): Promise<any> {
     options.filter.deleted = false;
+    // Parse date strings in DD-MM-YYYY format into Date objects
+    if (options.filter?.date) {
+      for (const operator in options.filter.date) {
+        if (options.filter.date.hasOwnProperty(operator)) {
+          if (['$gte', '$gt', '$lte', '$lt'].includes(operator)) {
+            options.filter.date[operator] = parseDate(
+              options.filter.date[operator],
+            );
+          }
+        }
+      }
+    }
     if (options.filter?.week) {
       const { startOfWeek, endOfWeek } = this.getStartAndEndOfWeek(
         options.filter?.week,
@@ -109,7 +123,7 @@ export class ChargesService {
       .skip((page - 1) * count)
       .limit(count)
       .exec();
-
+    
     return {
       data,
       // totalPrice: data.reduce((acc, curr) => acc + curr?.price, 0),
@@ -132,8 +146,11 @@ export class ChargesService {
           HttpStatus.BAD_REQUEST,
         );
       }
-      options.filter.startDate = new Date(options.filter.startDate);
-      options.filter.endDate = new Date(options.filter.endDate);
+      // Parse and format start date to ISODate
+      options.filter.startDate = parseDate(options.filter.startDate);
+      // Parse and format end date to ISODate
+      options.filter.endDate = parseDate(options.filter.endDate);
+
       let currentDate = new Date(options.filter.startDate);
       const totalsPerDay: any = [];
       let _totalRevenue = 0;
@@ -188,7 +205,10 @@ export class ChargesService {
           },
         ]);
         const _totalRevenuePerDay =
-          totalRevenuePerDay.length > 0 ? totalRevenuePerDay[0].totalPrice : 0;
+          totalRevenuePerDay.length > 0
+            ? totalRevenuePerDay[0].totalPrice -
+              (await this.getTotalDiscount(currentDate, currentDate))
+            : 0;
         const _totalChargesPerDay =
           totalChargesPerDay.length > 0 ? totalChargesPerDay[0].totalPrice : 0;
         const _totalProfitPerDay = _totalRevenuePerDay - _totalChargesPerDay;
@@ -198,7 +218,7 @@ export class ChargesService {
         _totalProfit += _totalProfitPerDay;
         totalsPerDay.push({
           revenue: _totalRevenuePerDay,
-          time: currentDate.toISOString().split('T')[0],
+          time: formatDate(currentDate),
           expenses: _totalChargesPerDay,
           profit: _totalProfitPerDay,
         });
@@ -504,10 +524,10 @@ export class ChargesService {
       previousMonthTotalRevenue =
         previousMonthTotalRevenue.length > 0
           ? previousMonthTotalRevenue[0].totalPrice -
-          (await this.getTotalDiscount(
-            options.filter.startDate,
-            options.filter.endDate,
-          ))
+            (await this.getTotalDiscount(
+              options.filter.startDate,
+              options.filter.endDate,
+            ))
           : 0;
       const previousMonthProfit =
         previousMonthTotalRevenue - previousMonthTotalCharges;

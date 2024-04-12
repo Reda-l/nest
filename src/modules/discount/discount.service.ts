@@ -4,6 +4,7 @@ import { UpdateDiscountDto } from './dto/update-discount.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Discount } from 'src/core/types/interfaces/discount.interface';
+import { parseDate } from 'src/core/shared/date.utils';
 
 @Injectable()
 export class DiscountService {
@@ -31,6 +32,18 @@ export class DiscountService {
   //function to get All discounts
   async findAll(options): Promise<any> {
     options.filter.deleted = false;
+    // Parse date strings in DD-MM-YYYY format into Date objects
+    if (options.filter?.date) {
+      for (const operator in options.filter.date) {
+        if (options.filter.date.hasOwnProperty(operator)) {
+          if (['$gte', '$gt', '$lte', '$lt'].includes(operator)) {
+            options.filter.date[operator] = parseDate(
+              options.filter.date[operator],
+            );
+          }
+        }
+      }
+    }
     const query = this.chargeModel.find(options.filter);
 
     if (options.sort) {
