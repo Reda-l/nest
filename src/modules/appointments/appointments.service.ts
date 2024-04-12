@@ -8,7 +8,7 @@ import { UsersService } from '../users/users.service';
 import { EmailService } from 'src/core/shared/email.service';
 import { User } from 'src/core/types/interfaces/user.interface';
 import { Service } from 'src/core/types/interfaces/service.interface';
-import { parseDate } from 'src/core/shared/date.utils';
+import { formatDate, parseDate } from 'src/core/shared/date.utils';
 
 @Injectable()
 export class AppointmentsService {
@@ -18,7 +18,7 @@ export class AppointmentsService {
     @InjectModel('Service') public readonly serviceModel: Model<Service>,
     private userService: UsersService,
     private emailService: EmailService,
-  ) {}
+  ) { }
   async create(
     createAppointmentDto: CreateAppointmentDto,
   ): Promise<Appointment | undefined> {
@@ -114,9 +114,25 @@ export class AppointmentsService {
         select: '-deleted -created_at -updated_at -__v',
       })
       .exec();
-
+    const formatedData = data.map((doc) => {
+      return {
+        time: doc.time,
+        reservations: doc.reservations,
+        bookingPersonDetails: doc.bookingPersonDetails,
+        status: doc.status,
+        updatedBy: doc.updatedBy,
+        discount: doc.discount,
+        payment: doc.payment,
+        source: doc.source,
+        deposit: doc.deposit,
+        commission: doc.commission,
+        date: formatDate(new Date(doc.date)),
+        created_at: doc.created_at,
+        updated_at: doc.updated_at,
+      };
+    });
     return {
-      data,
+      data:formatedData,
       count,
       total,
       lastPage,
@@ -299,7 +315,7 @@ export class AppointmentsService {
         }
         return { source: appointment.source, value: commissionValue };
       });
-  
+
       return commissionData;
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);

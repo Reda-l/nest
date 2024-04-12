@@ -7,7 +7,7 @@ import { Charge } from 'src/core/types/interfaces/charge.interface';
 import { Appointment } from 'src/core/types/interfaces/appointment.interface';
 import { uploadFirebaseFile } from 'src/core/shared/firebaseUpload';
 import { formatDate, parseDate } from 'src/core/shared/date.utils';
-import * as moment from 'moment'; 
+import * as moment from 'moment';
 
 @Injectable()
 export class ChargesService {
@@ -15,7 +15,7 @@ export class ChargesService {
     @InjectModel('Charge') public readonly chargeModel: Model<Charge>,
     @InjectModel('Appointment')
     public readonly appointmentModel: Model<Appointment>,
-  ) {}
+  ) { }
   // function to create Charge
   async create(createChargeDto: CreateChargeDto): Promise<Charge> {
     let createdCharge = new this.chargeModel(createChargeDto);
@@ -123,9 +123,25 @@ export class ChargesService {
       .skip((page - 1) * count)
       .limit(count)
       .exec();
-    
+    const formatedData = data.map(doc => {
+      return {
+        _id: doc._id,
+        name: doc.name,
+        price: doc.price,
+        reason: doc.reason,
+        date: formatDate(new Date(doc.date)),
+        responsable: doc.responsable,
+        image: doc.image,
+        type: doc.type,
+        created_at: doc.created_at,
+        updated_at: doc.updated_at,
+      };
+    });
+
+
+
     return {
-      data,
+      data: formatedData,
       // totalPrice: data.reduce((acc, curr) => acc + curr?.price, 0),
       count,
       total,
@@ -207,7 +223,7 @@ export class ChargesService {
         const _totalRevenuePerDay =
           totalRevenuePerDay.length > 0
             ? totalRevenuePerDay[0].totalPrice -
-              (await this.getTotalDiscount(currentDate, currentDate))
+            (await this.getTotalDiscount(currentDate, currentDate))
             : 0;
         const _totalChargesPerDay =
           totalChargesPerDay.length > 0 ? totalChargesPerDay[0].totalPrice : 0;
@@ -442,10 +458,10 @@ export class ChargesService {
       currentMonthTotalRevenue =
         currentMonthTotalRevenue.length > 0
           ? currentMonthTotalRevenue[0].totalPrice -
-            (await this.getTotalDiscount(
-              options.filter.startDate,
-              options.filter.endDate,
-            ))
+          (await this.getTotalDiscount(
+            options.filter.startDate,
+            options.filter.endDate,
+          ))
           : 0;
       currentMonthTotalCharges =
         currentMonthTotalCharges.length > 0
@@ -524,10 +540,10 @@ export class ChargesService {
       previousMonthTotalRevenue =
         previousMonthTotalRevenue.length > 0
           ? previousMonthTotalRevenue[0].totalPrice -
-            (await this.getTotalDiscount(
-              options.filter.startDate,
-              options.filter.endDate,
-            ))
+          (await this.getTotalDiscount(
+            options.filter.startDate,
+            options.filter.endDate,
+          ))
           : 0;
       const previousMonthProfit =
         previousMonthTotalRevenue - previousMonthTotalCharges;
