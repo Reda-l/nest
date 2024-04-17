@@ -17,7 +17,9 @@ export class ChargesService {
     public readonly appointmentModel: Model<Appointment>,
   ) { }
   // function to create Charge
-  async create(createChargeDto: CreateChargeDto): Promise<Charge> {
+  async create(createChargeDto: CreateChargeDto): Promise<any> {
+    if (createChargeDto.date)
+      createChargeDto.date = parseDate(createChargeDto.date);
     let createdCharge = new this.chargeModel(createChargeDto);
     let charge: Charge | undefined;
     try {
@@ -32,7 +34,18 @@ export class ChargesService {
       }
       charge = await createdCharge.save();
       if (charge) {
-        return charge;
+        return {
+          _id: charge._id,
+          name: charge.name,
+          price: charge.price,
+          reason: charge.reason,
+          date: formatDate(new Date(charge.date)),
+          responsable: charge.responsable,
+          image: charge.image,
+          type: charge.type,
+          created_at: charge.created_at,
+          updated_at: charge.updated_at,
+        };
       } else {
         throw new HttpException(
           'Error occured, cannot update charge',
@@ -585,7 +598,7 @@ export class ChargesService {
     let options = {} as any;
     options.deleted = false;
 
-    let charge = this.chargeModel
+    let charge = await this.chargeModel
       .findById(id, options)
       .select(['-password', '-createdBy', '-address']);
     const doesChargeExit = this.chargeModel.exists({ _id: id });
@@ -598,7 +611,10 @@ export class ChargesService {
             HttpStatus.NOT_FOUND,
           );
 
-        return charge;
+        return {
+          ...charge.toObject(),
+          date: formatDate(new Date(charge.date)),
+        };
       })
       .catch((error) => {
         throw new HttpException(error, HttpStatus.BAD_REQUEST);
@@ -618,6 +634,8 @@ export class ChargesService {
         );
         updateChargeDto.image = imageUrl;
       }
+      if (updateChargeDto.date)
+        updateChargeDto.date = parseDate(updateChargeDto.date);
       const updatedCharge = await this.chargeModel.findByIdAndUpdate(
         id,
         updateChargeDto,
@@ -631,7 +649,10 @@ export class ChargesService {
         );
       }
 
-      return updatedCharge;
+      return {
+        ...updatedCharge.toObject(),
+        date: formatDate(new Date(updatedCharge.date)),
+      };
     } catch (error) {
       throw new HttpException(
         `Error updating charge: ${error.message}`,

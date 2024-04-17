@@ -21,8 +21,11 @@ export class AppointmentsService {
   ) { }
   async create(
     createAppointmentDto: CreateAppointmentDto,
-  ): Promise<Appointment | undefined> {
+  ): Promise<any | undefined> {
     try {
+      if (createAppointmentDto.date)
+        createAppointmentDto.date = parseDate(createAppointmentDto.date.toString());
+
       // Save the appointment record
       const appointment = await this.appointmentModel.create({
         ...createAppointmentDto,
@@ -45,7 +48,7 @@ export class AppointmentsService {
         ];
         const context = {
           fullName: appointment.bookingPersonDetails.fullname,
-          date: appointment.date.toLocaleDateString('en-US', {
+          date: new Date(appointment.date).toLocaleDateString('en-US', {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
@@ -60,7 +63,9 @@ export class AppointmentsService {
         // await this.emailService.sendEmail(bookingPersonEmail, 'Your Appointment Confirmation', 'client-confirmation', context);
       }
 
-      return this.findOne(appointment._id);
+      const _appointment = await this.findOne(appointment._id);
+     
+      return _appointment
     } catch (error) {
       console.log(
         '🚀 ~ file: appointments.service.ts:75 ~ AppointmentsService ~ create ~ error:',
@@ -117,6 +122,7 @@ export class AppointmentsService {
     const formatedData = data.map((doc) => {
       return {
         time: doc.time,
+        _id: doc._id,
         reservations: doc.reservations,
         bookingPersonDetails: doc.bookingPersonDetails,
         status: doc.status,
@@ -132,7 +138,7 @@ export class AppointmentsService {
       };
     });
     return {
-      data:formatedData,
+      data: formatedData,
       count,
       total,
       lastPage,
@@ -168,7 +174,7 @@ export class AppointmentsService {
         );
       }
 
-      return appointment;
+      return { ...appointment.toObject(), date: formatDate(new Date(appointment.date)) };
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
@@ -180,6 +186,8 @@ export class AppointmentsService {
     authenticatedUser?: User,
   ): Promise<Appointment | undefined> {
     if (Object.entries(updateAppointmentDto).length > 0) {
+      if (updateAppointmentDto.date)
+        updateAppointmentDto.date = parseDate(updateAppointmentDto.date.toString());
       // Check if the status is set to 'CANCELED'
       const isCanceled = updateAppointmentDto.status === 'CANCELED';
       // Check if the status is set to 'CONFIRMED'
@@ -232,7 +240,7 @@ export class AppointmentsService {
         const emailTemplate = 'confirm-appointment';
         const context = {
           fullName: appointment.bookingPersonDetails.fullname,
-          date: appointment.date.toLocaleDateString('en-US', {
+          date: new Date(appointment.date).toLocaleDateString('en-US', {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
@@ -244,7 +252,7 @@ export class AppointmentsService {
         // await this.emailService.sendEmail(adminEmails, emailSubject, emailTemplate, context);
       }
 
-      return appointment;
+      return { ...appointment.toObject(), date: formatDate(new Date(appointment.date)) };
     } else {
       throw new HttpException(
         'No updates provided for the appointment',

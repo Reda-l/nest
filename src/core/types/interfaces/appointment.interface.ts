@@ -2,7 +2,7 @@ import { User } from "./user.interface";
 
 export class Appointment extends Document {
     _id?: string;
-    date: Date;
+    date: Date|string;
     created_at: Date;
     updated_at: Date;
     time: string;
