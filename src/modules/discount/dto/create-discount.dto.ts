@@ -1,1 +1,4 @@
-export class CreateDiscountDto {}
+export class CreateDiscountDto {
+    startDate : any
+    endDate : any
+}

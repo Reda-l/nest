@@ -8,6 +8,7 @@ export function formatDate(date: Date): string {
 
 // Transform to mongo date
 export function parseDate(dateString: string): Date {
-    const [day, month, year] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day); // month - 1 because months are zero-indexed in JavaScript Date objects
+  const [day, month, year] = dateString.split('-').map(Number);
+  // Create date object in UTC timezone
+  return new Date(Date.UTC(year, month - 1, day));
 }

@@ -4,21 +4,38 @@ import { UpdateDiscountDto } from './dto/update-discount.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Discount } from 'src/core/types/interfaces/discount.interface';
-import { parseDate } from 'src/core/shared/date.utils';
+import { formatDate, parseDate } from 'src/core/shared/date.utils';
 
 @Injectable()
 export class DiscountService {
   constructor(
     @InjectModel('Discount') public readonly chargeModel: Model<Discount>,
-  ) { }
+  ) {}
   // function to create Discount
-  async create(createDiscountDto: CreateDiscountDto): Promise<Discount> {
+  async create(createDiscountDto: CreateDiscountDto): Promise<any> {
+    // Parse date strings in DD-MM-YYYY format to Date objects
+    if (createDiscountDto.startDate)
+      createDiscountDto.startDate = parseDate(createDiscountDto.startDate);
+    if (createDiscountDto.endDate)
+      createDiscountDto.endDate = parseDate(createDiscountDto.endDate);
+
     let createdDiscount = new this.chargeModel(createDiscountDto);
     let discount: Discount | undefined;
     try {
       discount = await createdDiscount.save();
       if (discount) {
-        return discount;
+        return {
+          _id: discount._id,
+          code: discount.code,
+          description: discount.description,
+          startDate: formatDate(new Date(discount.startDate)),
+          endDate: formatDate(new Date(discount.endDate)),
+          type: discount.type,
+          value: discount.value,
+          status: discount.status,
+          created_at: discount.created_at,
+          updated_at: discount.updated_at,
+        };
       } else {
         throw new HttpException(
           'Error occured, cannot update discount',
@@ -48,9 +65,9 @@ export class DiscountService {
 
     if (options.sort) {
       query.sort(options.sort);
-    }else {
+    } else {
       query.sort({ created_at: -1 }); // Default sort by created_at in descending order
-  }
+    }
 
     if (options.select && options.select !== '') {
       query.select(options.select);
@@ -68,8 +85,23 @@ export class DiscountService {
       .limit(count)
       .exec();
 
+    const formatedData = data.map((doc) => {
+      return {
+        _id: doc._id,
+        code: doc.code,
+        description: doc.description,
+        startDate: formatDate(new Date(doc.startDate)),
+        endDate: formatDate(new Date(doc.endDate)),
+        type: doc.type,
+        value: doc.value,
+        status: doc.status,
+        created_at: doc.created_at,
+        updated_at: doc.updated_at,
+      };
+    });
+
     return {
-      data,
+      data: formatedData,
       count,
       total,
       lastPage,
@@ -87,7 +119,7 @@ export class DiscountService {
     options.deleted = false;
 
     let discount = this.chargeModel.findById(id, options);
-    const doesDiscountExit = this.chargeModel.exists({ _id: id,options });
+    const doesDiscountExit = this.chargeModel.exists({ _id: id, options });
 
     return doesDiscountExit
       .then(async (result) => {
@@ -108,7 +140,11 @@ export class DiscountService {
     id: string,
     updateDiscountDto: UpdateDiscountDto,
   ): Promise<Discount | undefined> {
-
+    // Parse date strings in DD-MM-YYYY format to Date objects
+    if (updateDiscountDto.startDate)
+      updateDiscountDto.startDate = parseDate(updateDiscountDto.startDate);
+    if (updateDiscountDto.endDate)
+      updateDiscountDto.endDate = parseDate(updateDiscountDto.endDate);
     // Retrieve the existing discount from the database
     const existingBusiness = await this.chargeModel.findById(id).exec();
 
@@ -129,10 +165,15 @@ export class DiscountService {
       let discount: Discount | null = await this.chargeModel.findById(id);
 
       if (discount) {
-        discount = await this.chargeModel.findByIdAndUpdate(id, updateDiscountDto, { new: true }).exec();
+        discount = await this.chargeModel
+          .findByIdAndUpdate(id, updateDiscountDto, { new: true })
+          .exec();
         return discount;
       } else {
-        throw new HttpException(`Could not find discount with id ${id}`, HttpStatus.NOT_FOUND);
+        throw new HttpException(
+          `Could not find discount with id ${id}`,
+          HttpStatus.NOT_FOUND,
+        );
       }
     } else {
       // Throw an error or return a response to indicate no updates were made
@@ -151,7 +192,7 @@ export class DiscountService {
     }
     // Perform the soft delete by setting deleted to true
     discount.deleted = true;
-    discount.deleted_at = new Date()
+    discount.deleted_at = new Date();
     await discount.save();
     return discount;
   }
@@ -186,7 +227,7 @@ export class DiscountService {
   }
   // function to bulk delete discounts
   async bulkRemove(ids: string[]): Promise<Discount[]> {
-    const objectIds = ids.map(id => new Types.ObjectId(id))
+    const objectIds = ids.map((id) => new Types.ObjectId(id));
     const discounts = await this.chargeModel.find({ _id: { $in: objectIds } });
     if (!discounts || discounts.length === 0) {
       throw new HttpException(
@@ -194,34 +235,36 @@ export class DiscountService {
         HttpStatus.NOT_FOUND,
       );
     }
-    return Promise.all(discounts.map(async (discount) => {
-      await this.remove(discount._id)
-      return discount;
-    }));
+    return Promise.all(
+      discounts.map(async (discount) => {
+        await this.remove(discount._id);
+        return discount;
+      }),
+    );
   }
 
   async checkDiscount(code: string): Promise<object> {
     const discount = await this.chargeModel.findOne({ code }).exec();
-    
+
     if (!discount) {
       return {
-        message : 'DISCOUNT_NOT_FOUND'
-      }
+        message: 'DISCOUNT_NOT_FOUND',
+      };
     }
 
     if (discount.status === 'ACTIVE') {
       return {
         discount,
-        message : 'VALID_DISCOUNT',        
-      }
+        message: 'VALID_DISCOUNT',
+      };
     } else if (discount.status === 'INACTIVE') {
       return {
-        message : 'INVALID_DISCOUNT',
-      }
+        message: 'INVALID_DISCOUNT',
+      };
     } else {
       return {
-        message : 'DISCOUNT_NOT_FOUND',
-      }
+        message: 'DISCOUNT_NOT_FOUND',
+      };
     }
   }
 }
