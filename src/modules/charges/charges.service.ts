@@ -15,7 +15,7 @@ export class ChargesService {
     @InjectModel('Charge') public readonly chargeModel: Model<Charge>,
     @InjectModel('Appointment')
     public readonly appointmentModel: Model<Appointment>,
-  ) { }
+  ) {}
   // function to create Charge
   async create(createChargeDto: CreateChargeDto): Promise<Charge> {
     let createdCharge = new this.chargeModel(createChargeDto);
@@ -123,7 +123,7 @@ export class ChargesService {
       .skip((page - 1) * count)
       .limit(count)
       .exec();
-    const formatedData = data.map(doc => {
+    const formatedData = data.map((doc) => {
       return {
         _id: doc._id,
         name: doc.name,
@@ -137,8 +137,6 @@ export class ChargesService {
         updated_at: doc.updated_at,
       };
     });
-
-
 
     return {
       data: formatedData,
@@ -223,7 +221,7 @@ export class ChargesService {
         const _totalRevenuePerDay =
           totalRevenuePerDay.length > 0
             ? totalRevenuePerDay[0].totalPrice -
-            (await this.getTotalDiscount(currentDate, currentDate))
+              (await this.getTotalDiscount(currentDate, currentDate))
             : 0;
         const _totalChargesPerDay =
           totalChargesPerDay.length > 0 ? totalChargesPerDay[0].totalPrice : 0;
@@ -261,8 +259,10 @@ export class ChargesService {
           HttpStatus.BAD_REQUEST,
         );
       }
-      const startDate = new Date(options.filter?.startDate);
-      const endDate = new Date(options.filter?.endDate);
+      // Parse and format start date to ISODate
+      const startDate = parseDate(options.filter.startDate);
+      const endDate = parseDate(options.filter.endDate);
+    
       const topServices = await this.appointmentModel.aggregate([
         {
           $match: {
@@ -365,10 +365,47 @@ export class ChargesService {
           $sort: { count: -1 },
         },
       ]);
+      const appointments = await this.appointmentModel.find({
+        $and: [
+          { 'commission.value': { $exists: true } },
+          { date: { $gte: startDate, $lte: endDate } },
+          { deleted: false },
+        ],
+      });
+
+      const commissionData = {};
+
+      appointments.forEach((appointment) => {
+        let commissionValue = 0;
+        if (appointment.commission.type === '%') {
+          const totalServicePrice = appointment.reservations.reduce(
+            (total, reservation) => {
+              return (
+                total +
+                reservation.services.reduce(
+                  (subtotal, service) => subtotal + service.price,
+                  0,
+                )
+              );
+            },
+            0,
+          );
+          commissionValue =
+            (totalServicePrice * appointment.commission.value) / 100;
+        } else {
+          commissionValue = appointment.commission.value;
+        }
+
+        if (!commissionData[appointment.source]) {
+          commissionData[appointment.source] = 0;
+        }
+        commissionData[appointment.source] += commissionValue;
+      });
       return {
         topServices,
         topRevenuesPerDay,
         topSources,
+        commissionData,
       };
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
@@ -382,6 +419,10 @@ export class ChargesService {
           HttpStatus.BAD_REQUEST,
         );
       }
+      // Parse and format start date to ISODate
+      options.filter.startDate = parseDate(options.filter.startDate);
+      // Parse and format end date to ISODate
+      options.filter.endDate = parseDate(options.filter.endDate);
       const { previousMonthEndDate, previousMonthStartDate } =
         this.getPreviousMonthDateRange(
           options.filter?.startDate,
@@ -458,10 +499,10 @@ export class ChargesService {
       currentMonthTotalRevenue =
         currentMonthTotalRevenue.length > 0
           ? currentMonthTotalRevenue[0].totalPrice -
-          (await this.getTotalDiscount(
-            options.filter.startDate,
-            options.filter.endDate,
-          ))
+            (await this.getTotalDiscount(
+              options.filter.startDate,
+              options.filter.endDate,
+            ))
           : 0;
       currentMonthTotalCharges =
         currentMonthTotalCharges.length > 0
@@ -540,10 +581,10 @@ export class ChargesService {
       previousMonthTotalRevenue =
         previousMonthTotalRevenue.length > 0
           ? previousMonthTotalRevenue[0].totalPrice -
-          (await this.getTotalDiscount(
-            options.filter.startDate,
-            options.filter.endDate,
-          ))
+            (await this.getTotalDiscount(
+              options.filter.startDate,
+              options.filter.endDate,
+            ))
           : 0;
       const previousMonthProfit =
         previousMonthTotalRevenue - previousMonthTotalCharges;
