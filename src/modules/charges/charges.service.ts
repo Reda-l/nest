@@ -275,7 +275,7 @@ export class ChargesService {
       // Parse and format start date to ISODate
       const startDate = parseDate(options.filter.startDate);
       const endDate = parseDate(options.filter.endDate);
-    
+
       const topServices = await this.appointmentModel.aggregate([
         {
           $match: {
@@ -386,9 +386,7 @@ export class ChargesService {
         ],
       });
 
-      const commissionData = {};
-
-      appointments.forEach((appointment) => {
+      const commissionData = appointments.map((appointment) => {
         let commissionValue = 0;
         if (appointment.commission.type === '%') {
           const totalServicePrice = appointment.reservations.reduce(
@@ -408,11 +406,7 @@ export class ChargesService {
         } else {
           commissionValue = appointment.commission.value;
         }
-
-        if (!commissionData[appointment.source]) {
-          commissionData[appointment.source] = 0;
-        }
-        commissionData[appointment.source] += commissionValue;
+        return { source: appointment.source, value: commissionValue };
       });
       return {
         topServices,

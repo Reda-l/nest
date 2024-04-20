@@ -63,7 +63,7 @@ const appointmentSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
-    deposit: { type: Number, required: false },
+    deposit: { type: Number, required: false,default : null },
     commission: {
       type: { type: String, required: false }, // type Number or %
       value: { type: Number, required: false },
