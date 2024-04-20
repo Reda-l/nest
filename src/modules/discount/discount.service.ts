@@ -10,7 +10,7 @@ import { formatDate, parseDate } from 'src/core/shared/date.utils';
 export class DiscountService {
   constructor(
     @InjectModel('Discount') public readonly chargeModel: Model<Discount>,
-  ) {}
+  ) { }
   // function to create Discount
   async create(createDiscountDto: CreateDiscountDto): Promise<any> {
     // Parse date strings in DD-MM-YYYY format to Date objects
@@ -118,8 +118,8 @@ export class DiscountService {
     let options = {} as any;
     options.deleted = false;
 
-    let discount = this.chargeModel.findById(id, options);
-    const doesDiscountExit = this.chargeModel.exists({ _id: id, options });
+    let discount = await this.chargeModel.findById(id, options);
+    const doesDiscountExit = this.chargeModel.exists({ _id: id });
 
     return doesDiscountExit
       .then(async (result) => {
@@ -129,7 +129,11 @@ export class DiscountService {
             HttpStatus.NOT_FOUND,
           );
 
-        return discount;
+        return {
+          ...discount.toObject(),
+          startDate: formatDate(new Date(discount.startDate)),
+          endDate: formatDate(new Date(discount.endDate)),
+        };
       })
       .catch((error) => {
         throw new HttpException(error, HttpStatus.BAD_REQUEST);
@@ -158,17 +162,17 @@ export class DiscountService {
         fields[key] = updateDiscountDto[key];
       }
     }
-
     updateDiscountDto = fields;
-
     if (Object.keys(updateDiscountDto).length > 0) {
       let discount: Discount | null = await this.chargeModel.findById(id);
-
       if (discount) {
-        discount = await this.chargeModel
-          .findByIdAndUpdate(id, updateDiscountDto, { new: true })
-          .exec();
-        return discount;
+        const updatedDiscount = await this.chargeModel
+          .findByIdAndUpdate(id, updateDiscountDto, { new: true });
+        return {
+          ...updatedDiscount.toObject(),
+          startDate: formatDate(new Date(discount.startDate)),
+          endDate: formatDate(new Date(discount.endDate)),
+        };
       } else {
         throw new HttpException(
           `Could not find discount with id ${id}`,
