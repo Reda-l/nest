@@ -9,6 +9,7 @@ export class User extends Document {
   firstname?: string;
   lastname?: string;
   middlename?: string;
+  startDate? : any;
   DOB?: Date;
   @Exclude()
   password?: string;

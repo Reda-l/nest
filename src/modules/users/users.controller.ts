@@ -44,7 +44,7 @@ export class UsersController {
       { name: 'cinBack', maxCount: 1 },
       { name: 'empreint', maxCount: 1 },
       { name: 'cnssCart', maxCount: 1 },
-
+      { name: 'picture', maxCount: 1 },
     ]),
   )
   async create(
