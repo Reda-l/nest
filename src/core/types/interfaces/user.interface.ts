@@ -3,7 +3,6 @@ import { Document, Types } from 'mongoose';
 
 export class User extends Document {
   id?: string;
-  username?: string;
   email?: string;
   status?: string;
   gender?: string;

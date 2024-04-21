@@ -31,7 +31,6 @@ export class AuthController {
       const userRO = {
         user: {
           _id: user._id,
-          username: user.username,
           firstname: user.firstname,
           lastname: user.lastname,
           role: user.role,
@@ -54,7 +53,6 @@ export class AuthController {
   async findMe(@Request() req) {
     return {
       _id: req.user._id,
-      username: req.user.username,
       firstname: req.user.firstname,
       lastname: req.user.lastname,
       email: req.user.email,
@@ -68,7 +66,7 @@ export class AuthController {
   @Post('refresh-token')
   async refreshToken(@Request() req) {
     const payload = {
-      username: req.user.username,
+      email: req.user.email,
       role: req.user.ROLE,
     };
     // Generate and return a new access token

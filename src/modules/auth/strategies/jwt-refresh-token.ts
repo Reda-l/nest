@@ -15,6 +15,6 @@ export class JwtRefreshTokenStrategy extends PassportStrategy(Strategy, 'jwt-ref
   async validate(payload: any) {
     // You might want to check if the token is still valid or if the user exists
     // Generate a new access token here
-    return { userId: payload.sub, username: payload.username };
+    return { userId: payload.sub, email: payload.email };
   }
 }

@@ -12,14 +12,6 @@ import {
 
 const UsersSchema = new mongoose.Schema(
   {
-    username: {
-      type: String,
-      lowercase: true,
-      maxlength: 255,
-      minlength: 6,
-      required: false,
-      trim: true,
-    },
     email: {
       type: String,
       unique: true,

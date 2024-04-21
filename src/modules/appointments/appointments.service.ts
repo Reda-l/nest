@@ -18,13 +18,15 @@ export class AppointmentsService {
     @InjectModel('Service') public readonly serviceModel: Model<Service>,
     private userService: UsersService,
     private emailService: EmailService,
-  ) { }
+  ) {}
   async create(
     createAppointmentDto: CreateAppointmentDto,
   ): Promise<any | undefined> {
     try {
       if (createAppointmentDto.date)
-        createAppointmentDto.date = parseDate(createAppointmentDto.date.toString());
+        createAppointmentDto.date = parseDate(
+          createAppointmentDto.date.toString(),
+        );
 
       // Save the appointment record
       const appointment = await this.appointmentModel.create({
@@ -64,8 +66,8 @@ export class AppointmentsService {
       }
 
       const _appointment = await this.findOne(appointment._id);
-     
-      return _appointment
+
+      return _appointment;
     } catch (error) {
       console.log(
         '🚀 ~ file: appointments.service.ts:75 ~ AppointmentsService ~ create ~ error:',
@@ -80,12 +82,16 @@ export class AppointmentsService {
     options.filter.deleted = false;
     // Parse date strings in DD-MM-YYYY format into Date objects
     if (options.filter?.date) {
-      for (const operator in options.filter.date) {
-        if (options.filter.date.hasOwnProperty(operator)) {
-          if (['$gte', '$gt', '$lte', '$lt'].includes(operator)) {
-            options.filter.date[operator] = parseDate(
-              options.filter.date[operator],
-            );
+      if (typeof options.filter.date === 'string') {
+        options.filter.date = parseDate(options.filter.date);
+      } else {
+        for (const operator in options.filter.date) {
+          if (options.filter.date.hasOwnProperty(operator)) {
+            if (['$gte', '$gt', '$lte', '$lt'].includes(operator)) {
+              options.filter.date[operator] = parseDate(
+                options.filter.date[operator],
+              );
+            }
           }
         }
       }
@@ -158,7 +164,7 @@ export class AppointmentsService {
         .findById(id, options)
         .populate({
           path: 'updatedBy',
-          select: '_id firstname lastname username',
+          select: '_id firstname lastname',
           model: 'User',
         })
         .populate({
@@ -174,7 +180,10 @@ export class AppointmentsService {
         );
       }
 
-      return { ...appointment.toObject(), date: formatDate(new Date(appointment.date)) };
+      return {
+        ...appointment.toObject(),
+        date: formatDate(new Date(appointment.date)),
+      };
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
@@ -187,7 +196,9 @@ export class AppointmentsService {
   ): Promise<Appointment | undefined> {
     if (Object.entries(updateAppointmentDto).length > 0) {
       if (updateAppointmentDto.date)
-        updateAppointmentDto.date = parseDate(updateAppointmentDto.date.toString());
+        updateAppointmentDto.date = parseDate(
+          updateAppointmentDto.date.toString(),
+        );
       // Check if the status is set to 'CANCELED'
       const isCanceled = updateAppointmentDto.status === 'CANCELED';
       // Check if the status is set to 'CONFIRMED'
@@ -201,7 +212,7 @@ export class AppointmentsService {
         )
         .populate({
           path: 'updatedBy',
-          select: '_id firstname lastname username',
+          select: '_id firstname lastname',
           model: 'User',
         })
         .populate({
@@ -252,7 +263,10 @@ export class AppointmentsService {
         // await this.emailService.sendEmail(adminEmails, emailSubject, emailTemplate, context);
       }
 
-      return { ...appointment.toObject(), date: formatDate(new Date(appointment.date)) };
+      return {
+        ...appointment.toObject(),
+        date: formatDate(new Date(appointment.date)),
+      };
     } else {
       throw new HttpException(
         'No updates provided for the appointment',
@@ -277,7 +291,7 @@ export class AppointmentsService {
       )
       .populate({
         path: 'updatedBy',
-        select: '_id firstname lastname username',
+        select: '_id firstname lastname',
         model: 'User',
       })
       .exec();
@@ -307,17 +321,27 @@ export class AppointmentsService {
       const appointments = await this.appointmentModel.find({
         $and: [
           { 'commission.value': { $exists: true } },
-          { 'date': { $gte: startDate, $lte: endDate } },
+          { date: { $gte: startDate, $lte: endDate } },
           { deleted: false },
         ],
       });
-      const commissionData = appointments.map(appointment => {
+      const commissionData = appointments.map((appointment) => {
         let commissionValue = 0;
         if (appointment.commission.type === '%') {
-          const totalServicePrice = appointment.reservations.reduce((total, reservation) => {
-            return total + reservation.services.reduce((subtotal, service) => subtotal + service.price, 0);
-          }, 0);
-          commissionValue = (totalServicePrice * appointment.commission.value) / 100;
+          const totalServicePrice = appointment.reservations.reduce(
+            (total, reservation) => {
+              return (
+                total +
+                reservation.services.reduce(
+                  (subtotal, service) => subtotal + service.price,
+                  0,
+                )
+              );
+            },
+            0,
+          );
+          commissionValue =
+            (totalServicePrice * appointment.commission.value) / 100;
         } else {
           commissionValue = appointment.commission.value;
         }

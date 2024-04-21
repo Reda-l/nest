@@ -10,6 +10,7 @@ import { createObjectCsvWriter } from 'csv-writer';
 import { uploadFirebaseFile } from 'src/core/shared/firebaseUpload';
 import { Role } from 'src/core/shared/shared.enum';
 import { CreateAuthDto } from '../auth/dto/create-auth.dto';
+import { parseDate } from 'src/core/shared/date.utils';
 
 @Injectable()
 export class UsersService {
@@ -31,6 +32,12 @@ export class UsersService {
       if (existingUser) {
         throw new HttpException('Email is already taken.', HttpStatus.CONFLICT);
       }
+      if(createUserDto.startDate){
+        createUserDto.startDate = parseDate(createUserDto.startDate.toString());
+
+      }
+      if(createUserDto.salary)
+        createUserDto.salary = +createUserDto.salary;
     
       // Upload files to Firebase
       if (files.cinFront && files.cinFront.length > 0) {
@@ -147,6 +154,7 @@ export class UsersService {
 
   // function to find user by username
   async findByPayload(payload) {
+    console.log("🚀 ~ UsersService ~ findByPayload ~ payload:", payload)
     const { id } = payload;
     const user = await this.userModel.findOne({ _id: id });
     return user;
@@ -379,7 +387,6 @@ export class UsersService {
       path: 'csv-files/users.csv',
       header: [
         { id: '_id', title: 'ID' },
-        { id: 'username', title: 'Username' },
         { id: 'firstname', title: 'Firstname' },
         { id: 'lastname', title: 'Lastname' },
         { id: 'email', title: 'Email' },
@@ -421,10 +428,6 @@ export class UsersService {
         error.message.toLowerCase().includes(createUserDTO.email.toLowerCase())
       ) {
         throw new Error(`e-mail ${createUserDTO.email} is already registered`);
-      } else if (error.message.toLowerCase().includes(createUserDTO.username)) {
-        throw new Error(
-          `Username ${createUserDTO.username} is already registered`,
-        );
       }
     }
     throw new HttpException(error.message, HttpStatus.BAD_REQUEST);

@@ -28,11 +28,6 @@ export class CreateUserDto {
     DOB?: Date;
 
     @ApiProperty()
-    @IsOptional() // auto-generate if not provided
-    @IsString()
-    username?: string;
-
-    @ApiProperty()
     @IsEmail()
     email?: string;
 
@@ -86,7 +81,7 @@ export class CreateUserDto {
     @ApiProperty()
     @IsOptional()
     @IsDecimal()
-    salary?: number;
+    salary?: any;
 
     @ApiProperty()
     @IsOptional()
@@ -116,6 +111,10 @@ export class CreateUserDto {
     @ApiProperty()
     @IsOptional()
     lastLoginAt?: Date;
+
+    @ApiProperty()
+    @IsOptional()
+    startDate : any;
 
 }
 
