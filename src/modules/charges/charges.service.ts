@@ -416,9 +416,9 @@ export class ChargesService {
         (accumulator, currentValue) => {
           const { source, value } = currentValue;
           if (!accumulator[source]) {
-            accumulator[source] = { source, totalValue: value };
+            accumulator[source] = { source, value: value };
           } else {
-            accumulator[source].totalValue += value;
+            accumulator[source].value += value;
           }
           return accumulator;
         },
