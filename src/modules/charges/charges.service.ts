@@ -406,13 +406,32 @@ export class ChargesService {
         } else {
           commissionValue = appointment.commission.value;
         }
-        return { source: appointment.source, value: commissionValue };
+        // Convert source to lowercase
+        const source = appointment.source.toLowerCase();
+        return { source, value: commissionValue };
       });
+
+      // Grouping commissionData
+      const groupedCommissionData = commissionData.reduce(
+        (accumulator, currentValue) => {
+          const { source, value } = currentValue;
+          if (!accumulator[source]) {
+            accumulator[source] = { source, totalValue: value };
+          } else {
+            accumulator[source].totalValue += value;
+          }
+          return accumulator;
+        },
+        {},
+      );
+
+      const groupedCommissionArray = Object.values(groupedCommissionData);
+
       return {
         topServices,
         topRevenuesPerDay,
         topSources,
-        commissionData,
+        commissionData: groupedCommissionArray,
       };
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
