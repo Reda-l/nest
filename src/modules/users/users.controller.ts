@@ -54,6 +54,7 @@ export class UsersController {
       cinBack?: Express.Multer.File[];
       empreint?: Express.Multer.File[];
       cnssCart?:Express.Multer.File[];
+      picture?:Express.Multer.File[];
     },
     @Body() createUserDto: CreateUserDto,
   ) {
@@ -94,6 +95,7 @@ export class UsersController {
       cinBack?: Express.Multer.File[];
       empreint?: Express.Multer.File[];
       cnssCart?:Express.Multer.File[];
+      picture?:Express.Multer.File[];
     },
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,

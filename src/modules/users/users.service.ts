@@ -23,39 +23,59 @@ export class UsersService {
       cinFront?: Express.Multer.File[];
       cinBack?: Express.Multer.File[];
       empreint?: Express.Multer.File[];
-      cnssCart?:Express.Multer.File[];
+      cnssCart?: Express.Multer.File[];
+      picture?: Express.Multer.File[];
+
     },
   ): Promise<User> {
     try {
       // Check for duplicate email
-      const existingUser = await this.userModel.findOne({ email: createUserDto.email }).exec();
+      const existingUser = await this.userModel
+        .findOne({ email: createUserDto.email })
+        .exec();
       if (existingUser) {
         throw new HttpException('Email is already taken.', HttpStatus.CONFLICT);
       }
-      if(createUserDto.startDate){
+      if (createUserDto.startDate) {
         createUserDto.startDate = parseDate(createUserDto.startDate.toString());
-
       }
-      if(createUserDto.salary)
-        createUserDto.salary = +createUserDto.salary;
-    
+      if (createUserDto.salary) createUserDto.salary = +createUserDto.salary;
+
       // Upload files to Firebase
       if (files.cinFront && files.cinFront.length > 0) {
-        createUserDto.cinFront = await uploadFirebaseFile(files.cinFront[0], 'CIN');
+        createUserDto.cinFront = await uploadFirebaseFile(
+          files.cinFront[0],
+          'CIN',
+        );
       }
       if (files.cinBack && files.cinBack.length > 0) {
-        createUserDto.cinBack = await uploadFirebaseFile(files.cinBack[0], 'CIN');
+        createUserDto.cinBack = await uploadFirebaseFile(
+          files.cinBack[0],
+          'CIN',
+        );
       }
       if (files.empreint && files.empreint.length > 0) {
-        createUserDto.empreint = await uploadFirebaseFile(files.empreint[0], 'Empreint');
+        createUserDto.empreint = await uploadFirebaseFile(
+          files.empreint[0],
+          'Empreint',
+        );
       }
       if (files.cnssCart && files.cnssCart.length > 0) {
-        createUserDto.cnssCart = await uploadFirebaseFile(files.cnssCart[0], 'Cnss');
+        createUserDto.cnssCart = await uploadFirebaseFile(
+          files.cnssCart[0],
+          'Cnss',
+        );
       }
-    
+      if (files.picture && files.picture.length > 0) {
+        createUserDto.picture = await uploadFirebaseFile(
+          files.picture[0],
+          'Picture',
+        );
+      }
+
       // Hash password
       createUserDto.password = await bcrypt.hash(createUserDto.password, 10);
-    
+
       // Create user in the database
       const newUser = await this.userModel.create(createUserDto);
       return newUser;
@@ -63,7 +83,6 @@ export class UsersService {
       throw this.evaluateMongoError(error, createUserDto);
     }
   }
-  
 
   //function to get All users
   async findAll(options): Promise<UserRO> {
@@ -72,10 +91,9 @@ export class UsersService {
 
     if (options.sort) {
       query.sort(options.sort);
-    }else {
+    } else {
       query.sort({ created_at: -1 }); // Default sort by created_at in descending order
-  }
-
+    }
 
     if (options.select && options.select !== '') {
       query.select(options.select);
@@ -154,7 +172,7 @@ export class UsersService {
 
   // function to find user by username
   async findByPayload(payload) {
-    console.log("🚀 ~ UsersService ~ findByPayload ~ payload:", payload)
+    console.log('🚀 ~ UsersService ~ findByPayload ~ payload:', payload);
     const { id } = payload;
     const user = await this.userModel.findOne({ _id: id });
     return user;
@@ -210,6 +228,12 @@ export class UsersService {
         updateUserDto.cnssCart = await uploadFirebaseFile(
           files.cnssCart[0],
           'Cnss',
+        );
+      }
+      if (files?.picture && files?.picture.length > 0) {
+        updateUserDto.picture = await uploadFirebaseFile(
+          files.picture[0],
+          'Picture',
         );
       }
 

@@ -96,6 +96,11 @@ const UsersSchema = new mongoose.Schema(
       required: false,
       default: null,
     },
+    picture : {
+      type: String,
+      required: false,
+      default: null,
+    },
     startDate: { type: Date, required: false },
     cnssCart: { type: String, required: false },
     cnssNumber: {
