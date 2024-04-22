@@ -217,7 +217,6 @@ export class UsersService {
 
   // function to find user by username
   async findByPayload(payload) {
-    console.log('🚀 ~ UsersService ~ findByPayload ~ payload:', payload);
     const { id } = payload;
     const user = await this.userModel.findOne({ _id: id });
     return user;

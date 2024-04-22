@@ -4,17 +4,43 @@ import { UpdatePointageDto } from './dto/update-pointage.dto';
 import { Pointage } from 'src/core/types/interfaces/pointage.interface';
 import { Model, MongooseError } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
+import { UsersService } from 'src/modules/users/users.service';
+import {
+  formatDate,
+  formatDateTime,
+  parseDate,
+  parseDateTime,
+} from 'src/core/shared/date.utils';
 
 @Injectable()
 export class PointagesService {
   constructor(
     @InjectModel('Pointage') public readonly pointageModel: Model<Pointage>,
+    private userService: UsersService,
   ) {}
 
   async create(
     createPointageDto: CreatePointageDto,
-  ): Promise<Pointage | undefined> {
+  ): Promise<any | undefined> {
     try {
+      // Parse start time and end time if provided
+    if (createPointageDto.startTime) {
+      const parsedStartTime = parseDateTime(createPointageDto.startTime.toString());
+      if (!isNaN(parsedStartTime.getTime())) {
+        createPointageDto.startTime = parsedStartTime;
+      } else {
+        throw new Error('Invalid startTime format');
+      }
+    }
+
+    if (createPointageDto.endTime) {
+      const parsedEndTime = parseDateTime(createPointageDto.endTime.toString());
+      if (!isNaN(parsedEndTime.getTime())) {
+        createPointageDto.endTime = parsedEndTime;
+      } else {
+        throw new Error('Invalid endTime format');
+      }
+    }
       // Check if a pointage record already exists for the same day and employee
       const existingPointage = await this.pointageModel
         .findOne({
@@ -37,9 +63,29 @@ export class PointagesService {
         );
       }
 
-      // Save the record
-      const pointage = await this.pointageModel.create(createPointageDto);
-      return pointage;
+      // Calculate and assign the salary for the pointage
+      const employee = await this.userService.findOne(
+        createPointageDto.employee,
+      );
+      if (!employee) {
+        throw new HttpException('Employee not found', HttpStatus.NOT_FOUND);
+      }
+      const salaire = employee.salary;
+
+      // Save the record with the additional salaire field
+      const pointage = await this.pointageModel.create({
+        ...createPointageDto,
+        salaire,
+      });
+
+      // Format startTime and endTime before returning
+    const formattedPointage = {
+      ...pointage.toJSON(),
+      startTime: formatDateTime(pointage.startTime),
+      endTime: formatDateTime(pointage.endTime),
+    };
+
+    return formattedPointage
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
@@ -119,10 +165,13 @@ export class PointagesService {
   async getPointageByUserId(userId: string, options): Promise<any> {
     options.filter.deleted = false;
     options.filter.employee = userId;
+    let formattedDate;
     if (options.filter?.startTime) {
       // Extract the year and month from the date in the query string
       const dateString = options.filter.startTime;
-      const [year, month] = dateString.split('-').map(Number);
+      const [month, year] = dateString.split('-').map(Number);
+      // Format the date as MM-YYYY
+      formattedDate = `${month.toString().padStart(2, '0')}-${year}`;
 
       // Calculate the first and last day of the specified month
       const firstDayOfMonth = new Date(Date.UTC(year, month - 1, 1));
@@ -149,22 +198,27 @@ export class PointagesService {
     const data = await query
       .populate({
         path: 'employee',
-        select: '_id firstname lastname email salaryType salary',
+        select: '_id firstname lastname email salaryType salary status role',
         model: 'User',
       })
       .exec();
 
-    let daysWorked = null;
-    let totalSalary = 0;
-    if (data[0]?.employee?.salaryType == 'DAILY') {
-      daysWorked = await this.pointageModel.countDocuments(options.filter);
-      totalSalary = daysWorked * data[0]?.employee?.salary;
-    }
+    const pointages = data.map((pointage) => ({
+      _id: pointage._id,
+      startTime: formatDateTime(new Date(pointage.startTime)),
+      endTime: formatDateTime(new Date(pointage.endTime)),
+      salaire: pointage.salaire,
+    }));
+
+    const stats = {
+      date: formattedDate,
+      status: data.length > 0 ? 'PAID' : 'UNPAID', // Assuming if there are any pointages, it's paid
+    };
 
     return {
-      data,
-      daysWorked,
-      totalSalary,
+      employee: data[0]?.employee,
+      stats,
+      pointages,
     };
   }
 

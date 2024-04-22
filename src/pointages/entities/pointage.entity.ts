@@ -10,6 +10,7 @@ const PointageSchema = new mongoose.Schema(
     startTime: { type: Date, required: true },
     endTime: { type: Date },
     daysWorked: { type: Number, default: 0 },
+    salaire : { type: Number, default: 0 },
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

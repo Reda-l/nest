@@ -3,4 +3,5 @@ export class Pointage extends Document {
   employee: any;
   startTime: Date;
   endTime?: Date;
+  salaire?:number;
 }
