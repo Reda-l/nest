@@ -41,6 +41,7 @@ export class PointagesService {
         throw new Error('Invalid endTime format');
       }
     }
+    
       // Check if a pointage record already exists for the same day and employee
       const existingPointage = await this.pointageModel
         .findOne({
@@ -70,6 +71,9 @@ export class PointagesService {
       if (!employee) {
         throw new HttpException('Employee not found', HttpStatus.NOT_FOUND);
       }
+      if (employee.status === 'INACTIVE') {
+        throw new HttpException('Inactive employee cannot create pointage', HttpStatus.UNAUTHORIZED);
+      }  
       const salaire = employee.salary;
 
       // Save the record with the additional salaire field
