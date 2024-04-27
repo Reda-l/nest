@@ -9,6 +9,8 @@ const SalarySchema = new mongoose.Schema(
     },
     date: { type: Date, required: true },
     status: { type: String, enum: ['PAID', 'UNPAID'], default: 'UNPAID' },
+    salary : { type: Number, required: false },
+    salaryType : { type: String, required: false },
     amount : { type: Number, required: false },
   },
   {

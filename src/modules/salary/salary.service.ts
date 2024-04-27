@@ -5,16 +5,30 @@ import { Salary } from 'src/core/types/interfaces/salary.interface';
 import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { formatDate, parseDate } from 'src/core/shared/date.utils';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class SalaryService {
   constructor(
     @InjectModel('Salary') public readonly salaryModel: Model<Salary>,
+    private userService: UsersService,
   ) { }
   // function to create Salary
   async create(createSalaryDto: CreateSalaryDto): Promise<any> {
     if (createSalaryDto.date)
       createSalaryDto.date = parseDate(createSalaryDto.date);
+
+    // find and assign the salary & salaryType
+    const employee = await this.userService.findOne(
+      createSalaryDto.employee,
+    );
+    if (!employee) {
+      throw new HttpException('Employee not found', HttpStatus.NOT_FOUND);
+    }
+    // set current salary & salaryType 
+    createSalaryDto.salary = employee.salary
+    createSalaryDto.salaryType = employee.salaryType
+
     let createdSalary = new this.salaryModel(createSalaryDto);
     let salary: Salary | undefined;
     try {
@@ -26,6 +40,8 @@ export class SalaryService {
           status: salary.status,
           date: formatDate(new Date(salary.date)),
           amount: salary.amount,
+          salary : salary.salary,
+          salaryType : salary.salaryType,
           created_at: salary.created_at,
           updated_at: salary.updated_at,
         };
@@ -43,59 +59,24 @@ export class SalaryService {
   //function to get All salaries
   async findAll(options): Promise<any> {
     options.filter.deleted = false;
+    let formattedDate;
     // Parse date strings in DD-MM-YYYY format into Date objects
     if (options.filter?.date) {
-      for (const operator in options.filter.date) {
-        if (options.filter.date.hasOwnProperty(operator)) {
-          if (['$gte', '$gt', '$lte', '$lt'].includes(operator)) {
-            options.filter.date[operator] = parseDate(
-              options.filter.date[operator],
-            );
-          }
-        }
-      }
-    }
-    if (options.filter?.week) {
-      const { startOfWeek, endOfWeek } = this.getStartAndEndOfWeek(
-        options.filter?.week,
-      );
+      // Extract the year and month from the date in the query string
+      const dateString = options.filter.date;
+      const [month, year] = dateString.split('-').map(Number);
+      // Format the date as MM-YYYY
+      formattedDate = `${month.toString().padStart(2, '0')}-${year}`;
+
+      // Calculate the first and last day of the specified month
+      const firstDayOfMonth = new Date(Date.UTC(year, month - 1, 1));
+      const lastDayOfMonth = new Date(Date.UTC(year, month, 0));
+
+      // Update the date filter to include the entire month
       options.filter.date = {
-        $gte: startOfWeek,
-        $lt: endOfWeek,
+        $gte: firstDayOfMonth,
+        $lte: lastDayOfMonth,
       };
-      delete options.filter?.week;
-    }
-    if (options.filter?.today) {
-      const startOfDay = new Date();
-      const endOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
-      endOfDay.setHours(23, 59, 59, 999);
-      options.filter.date = {
-        $gte: startOfDay,
-        $lt: endOfDay,
-      };
-      delete options.filter?.today;
-    }
-    if (options.filter?.year) {
-      const currentYear = options.filter?.year || new Date().getFullYear();
-      const firstDay = new Date(currentYear, 0, 1);
-      const lastDay = new Date(currentYear, 11, 31);
-      options.filter.date = {
-        $gte: firstDay,
-        $lt: lastDay,
-      };
-      delete options.filter?.year;
-    }
-    if (options.filter?.month) {
-      var date = new Date();
-      const month = options.filter?.month || date.getMonth();
-      var firstDay = new Date(date.getFullYear(), month, 1);
-      var lastDay = new Date(date.getFullYear(), month + 1, 0);
-      options.filter.date = {
-        $gte: firstDay,
-        $lt: lastDay,
-      };
-      delete options.filter?.month;
     }
     const query = this.salaryModel.find(options.filter);
 
@@ -126,6 +107,8 @@ export class SalaryService {
         status: doc.status,
         date: formatDate(new Date(doc.date)),
         amount: doc.amount,
+        salary : doc.salary,
+        salaryType : doc.salaryType,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
       };
