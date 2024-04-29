@@ -12,22 +12,20 @@ export class SalaryService {
   constructor(
     @InjectModel('Salary') public readonly salaryModel: Model<Salary>,
     private userService: UsersService,
-  ) { }
+  ) {}
   // function to create Salary
   async create(createSalaryDto: CreateSalaryDto): Promise<any> {
     if (createSalaryDto.date)
       createSalaryDto.date = parseDate(createSalaryDto.date);
 
     // find and assign the salary & salaryType
-    const employee = await this.userService.findOne(
-      createSalaryDto.employee,
-    );
+    const employee = await this.userService.findOne(createSalaryDto.employee);
     if (!employee) {
       throw new HttpException('Employee not found', HttpStatus.NOT_FOUND);
     }
-    // set current salary & salaryType 
-    createSalaryDto.salary = employee.salary
-    createSalaryDto.salaryType = employee.salaryType
+    // set current salary & salaryType
+    createSalaryDto.salary = employee.salary;
+    createSalaryDto.salaryType = employee.salaryType;
 
     let createdSalary = new this.salaryModel(createSalaryDto);
     let salary: Salary | undefined;
@@ -40,8 +38,10 @@ export class SalaryService {
           status: salary.status,
           date: formatDate(new Date(salary.date)),
           amount: salary.amount,
-          salary : salary.salary,
-          salaryType : salary.salaryType,
+          salary: salary.salary,
+          salaryType: salary.salaryType,
+          responsable: salary.responsable,
+          message: salary.message,
           created_at: salary.created_at,
           updated_at: salary.updated_at,
         };
@@ -107,8 +107,10 @@ export class SalaryService {
         status: doc.status,
         date: formatDate(new Date(doc.date)),
         amount: doc.amount,
-        salary : doc.salary,
-        salaryType : doc.salaryType,
+        salary: doc.salary,
+        salaryType: doc.salaryType,
+        responsable: doc.responsable,
+        message: doc.message,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
       };
@@ -132,8 +134,7 @@ export class SalaryService {
     let options = {} as any;
     options.deleted = false;
 
-    let salary = await this.salaryModel
-      .findById(id, options)
+    let salary = await this.salaryModel.findById(id, options);
     const doesSalaryExit = this.salaryModel.exists({ _id: id });
 
     return doesSalaryExit

@@ -12,6 +12,8 @@ const SalarySchema = new mongoose.Schema(
     salary : { type: Number, required: false },
     salaryType : { type: String, required: false },
     amount : { type: Number, required: false },
+    responsable : { type: String, required: false },
+    message : { type: String, required: false },
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

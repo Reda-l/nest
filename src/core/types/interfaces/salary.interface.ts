@@ -7,6 +7,8 @@ export class Salary extends Document {
   amount: number;
   salary: number;
   salaryType: string;
+  responsable: string;
+  message: string;
   date: string | number | Date;
   created_at: any;
   updated_at: any;
