@@ -11,11 +11,13 @@ import {
   parseDate,
   parseDateTime,
 } from 'src/core/shared/date.utils';
+import { Salary } from 'src/core/types/interfaces/salary.interface';
 
 @Injectable()
 export class PointagesService {
   constructor(
     @InjectModel('Pointage') public readonly pointageModel: Model<Pointage>,
+    @InjectModel('Salary') public readonly salaryModel: Model<Salary>,
     private userService: UsersService,
   ) {}
 

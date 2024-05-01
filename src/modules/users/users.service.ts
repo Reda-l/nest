@@ -25,7 +25,6 @@ export class UsersService {
       empreint?: Express.Multer.File[];
       cnssCart?: Express.Multer.File[];
       picture?: Express.Multer.File[];
-
     },
   ): Promise<User> {
     try {
@@ -70,7 +69,7 @@ export class UsersService {
         );
       }
       if (files.picture && files.picture.length > 0) {
-        console.log("got picture")
+        console.log('got picture');
         createUserDto.picture = await uploadFirebaseFile(
           files.picture[0],
           'Picture',
@@ -91,6 +90,18 @@ export class UsersService {
   //function to get All users
   async findAll(options): Promise<any> {
     options.filter.deleted = false;
+
+    // Check if name filter is provided and construct the regex query
+    if (options.filter.name) {
+      options.filter.$or = [
+          { firstname: { $regex: options.filter.name, $options: 'i' } }, // Case-insensitive search for firstname
+          { lastname: { $regex: options.filter.name, $options: 'i' } }    // Case-insensitive search for lastname
+      ];
+      // Remove the name field from filter since it's already used
+      delete options.filter.name;
+  }
+
+
     const query = this.userModel.find(options.filter);
 
     if (options.sort) {
@@ -116,40 +127,39 @@ export class UsersService {
       .limit(count)
       .exec();
 
-      const formattedData = data.map((doc : any) => {
-        return {
-          email: doc.email,
-          _id: doc._id,
-          password: doc.password,
-          firstname: doc.firstname,
-          lastname: doc.lastname,
-          DOB: formatDate(new Date(doc.DOB)),
-          status: doc.status,
-          statusFamille: doc.statusFamille,
-          gender: doc.gender,
-          role: doc.role,
-          adresse: doc.adresse,
-          emailVerified: doc.emailVerified,
-          phoneNumber: doc.phoneNumber,
-          emergencyName: doc.emergencyName,
-          emergencyPhone: doc.emergencyPhone,
-          cinFront: doc.cinFront,
-          cinBack: doc.cinBack,
-          empreint: doc.empreint,
-          salaryType: doc.salaryType,
-          salary: doc.salary,
-          picture: doc.picture,
-          startDate: formatDate(new Date(doc.startDate)),
-          cnssCart: doc.cnssCart,
-          cnssNumber: doc.cnssNumber,
-          created_at: doc.created_at,
-          updated_at: doc.updated_at,
-        };
-      });
-      
+    const formattedData = data.map((doc: any) => {
+      return {
+        email: doc.email,
+        _id: doc._id,
+        password: doc.password,
+        firstname: doc.firstname,
+        lastname: doc.lastname,
+        DOB: formatDate(new Date(doc.DOB)),
+        status: doc.status,
+        statusFamille: doc.statusFamille,
+        gender: doc.gender,
+        role: doc.role,
+        adresse: doc.adresse,
+        emailVerified: doc.emailVerified,
+        phoneNumber: doc.phoneNumber,
+        emergencyName: doc.emergencyName,
+        emergencyPhone: doc.emergencyPhone,
+        cinFront: doc.cinFront,
+        cinBack: doc.cinBack,
+        empreint: doc.empreint,
+        salaryType: doc.salaryType,
+        salary: doc.salary,
+        picture: doc.picture,
+        startDate: formatDate(new Date(doc.startDate)),
+        cnssCart: doc.cnssCart,
+        cnssNumber: doc.cnssNumber,
+        created_at: doc.created_at,
+        updated_at: doc.updated_at,
+      };
+    });
 
     return {
-      data : formattedData,
+      data: formattedData,
       count,
       total,
       lastPage,
@@ -166,34 +176,31 @@ export class UsersService {
     try {
       let options = {} as any;
       options.deleted = false;
-  
+
       const user = await this.userModel
         .findById(id, options)
         .select(['-password', '-createdBy', '-address'])
         .exec();
-  
+
       if (!user) {
         throw new HttpException(
           `Could not find user with id ${id}`,
           HttpStatus.NOT_FOUND,
         );
       }
-  
+
       // Format the startDate field
       const formattedUser = {
         ...user.toObject(),
         startDate: formatDate(new Date(user.startDate)),
-        DOB : formatDate(new Date(user.DOB))
+        DOB: formatDate(new Date(user.DOB)),
       };
-  
+
       return formattedUser;
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
-  
-  
-  
 
   // function find user with login data
   async findByLogin(userDTO: CreateAuthDto): Promise<User | undefined | User> {
@@ -244,13 +251,9 @@ export class UsersService {
       // Retrieve the existing user from the database
       const existingUser = await this.userModel.findById(id).exec();
       if (updateUserDto.startDate)
-        updateUserDto.startDate = parseDate(
-          updateUserDto.startDate.toString(),
-        );
-        if (updateUserDto.DOB)
-          updateUserDto.DOB = parseDate(
-            updateUserDto.DOB.toString(),
-          );
+        updateUserDto.startDate = parseDate(updateUserDto.startDate.toString());
+      if (updateUserDto.DOB)
+        updateUserDto.DOB = parseDate(updateUserDto.DOB.toString());
       if (!existingUser) {
         // Handle the case where the user with the provided ID does not exist
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);

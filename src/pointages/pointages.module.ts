@@ -4,10 +4,12 @@ import { PointagesController } from './pointages.controller';
 import { PointageSchema } from './entities/pointage.entity';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from 'src/modules/users/users.module';
+import { SalarySchema } from 'src/modules/salary/entities/salary.entity';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: 'Pointage', schema: PointageSchema }]),
+    MongooseModule.forFeature([{ name: 'Salary', schema: SalarySchema }]),
     UsersModule
   ],
   controllers: [PointagesController],
