@@ -17,7 +17,6 @@ import { Salary } from 'src/core/types/interfaces/salary.interface';
 export class PointagesService {
   constructor(
     @InjectModel('Pointage') public readonly pointageModel: Model<Pointage>,
-    @InjectModel('Salary') public readonly salaryModel: Model<Salary>,
     private userService: UsersService,
   ) {}
 

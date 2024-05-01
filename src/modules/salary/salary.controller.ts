@@ -26,12 +26,20 @@ export class SalaryController {
     if (!query.filter) query.filter = {};
     return this.salaryService.findAll(query);
   }
+  @Get('/payments')
+  findUsersBySalaryCriteria(@Req() req: ReqOptions) {
+    let query = req.query.s ? JSON.parse(req.query.s as string) : {};
+    if (!query.filter) query.filter = {};
+    return this.salaryService.findUsersBySalaryCriteria(query);
+  }
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
   @Roles(Role.SuperAdmin, Role.Admin,Role.Mannager)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.salaryService.findOne(id);
   }
+
+ 
 
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
   @Roles(Role.SuperAdmin, Role.Admin,Role.Mannager)

@@ -9,7 +9,6 @@ import { SalarySchema } from 'src/modules/salary/entities/salary.entity';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: 'Pointage', schema: PointageSchema }]),
-    MongooseModule.forFeature([{ name: 'Salary', schema: SalarySchema }]),
     UsersModule
   ],
   controllers: [PointagesController],

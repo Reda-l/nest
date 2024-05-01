@@ -270,4 +270,105 @@ export class SalaryService {
 
     return { startOfWeek: startDate, endOfWeek: endDate };
   }
+
+  async findUsersBySalaryCriteria(options): Promise<any> {
+    options.filter.deleted = false;
+    let formattedDate;
+    // Parse date strings in DD-MM-YYYY format into Date objects
+    if (options.filter?.date) {
+      // Extract the year and month from the date in the query string
+      const dateString = options.filter.date;
+      const [month, year] = dateString.split('-').map(Number);
+      // Format the date as MM-YYYY
+      formattedDate = `${month.toString().padStart(2, '0')}-${year}`;
+
+      // Calculate the first and last day of the specified month
+      const firstDayOfMonth = new Date(Date.UTC(year, month - 1, 1));
+      const lastDayOfMonth = new Date(Date.UTC(year, month, 0));
+
+      // Update the date filter to include the entire month
+      options.filter.date = {
+        $gte: firstDayOfMonth,
+        $lte: lastDayOfMonth,
+      };
+    }
+    const userStatusFilter = options.filter.userStatus; // store the userstatus
+    delete options.filter.userStatus
+    const query = this.salaryModel.find(options.filter);
+
+    // Populate the 'employee' field to get user details
+    query.populate({
+      path: 'employee',
+      match: { status: userStatusFilter } // Your filter criteria here
+    });
+
+    if (options.sort) {
+      query.sort(options.sort);
+    }
+
+    if (options.select && options.select !== '') {
+      query.select(options.select);
+    }
+
+    const page: number = parseInt(options.page as any) || 1;
+    const limit: number = parseInt(options.limit as any) || 10;
+    const total = await this.salaryModel.countDocuments(options.filter);
+    const count = total < limit ? total : limit;
+    const lastPage = Math.max(Math.ceil(total / limit), 1);
+    const startIndex = (page - 1) * count;
+    const endIndex = Math.min(count * page, count);
+
+    const data = await query
+      .skip((page - 1) * count)
+      .limit(count)
+      .exec();
+    const formattedData = data
+      .map((doc: any) => {
+        // Only include data if employee details are found
+        if (doc.employee) {
+          return {
+            _id: doc.employee._id,
+            email: doc.employee.email,
+            firstname: doc.employee.firstname,
+            lastname: doc.employee.lastname,
+            DOB: formatDate(new Date(doc.employee.DOB)),
+            status: doc.employee.status,
+            statusFamille: doc.employee.statusFamille,
+            gender: doc.employee.gender,
+            role: doc.employee.role,
+            adresse: doc.employee.adresse,
+            emailVerified: doc.employee.emailVerified,
+            phoneNumber: doc.employee.phoneNumber,
+            emergencyName: doc.employee.emergencyName,
+            emergencyPhone: doc.employee.emergencyPhone,
+            cinFront: doc.employee.cinFront,
+            cinBack: doc.employee.cinBack,
+            empreint: doc.employee.empreint,
+            salaryType: doc.employee.salaryType,
+            salary: doc.employee.salary,
+            picture: doc.employee.picture,
+            startDate: formatDate(new Date(doc.employee.startDate)),
+            cnssCart: doc.employee.cnssCart,
+            cnssNumber: doc.employee.cnssNumber,
+            created_at: doc.employee.created_at,
+            updated_at: doc.employee.updated_at,
+          };
+        } else {
+          // If employee details are not found, return null
+          return null;
+        }
+      })
+      .filter((doc: any) => doc !== null); // Remove null entries
+
+    return {
+      data: formattedData,
+      count,
+      total,
+      lastPage,
+      startIndex,
+      endIndex,
+      page,
+      pageCount: Math.ceil(total / limit),
+    };
+  }
 }
