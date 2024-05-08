@@ -20,29 +20,31 @@ export class PointagesService {
     private userService: UsersService,
   ) {}
 
-  async create(
-    createPointageDto: CreatePointageDto,
-  ): Promise<any | undefined> {
+  async create(createPointageDto: CreatePointageDto): Promise<any | undefined> {
     try {
       // Parse start time and end time if provided
-    if (createPointageDto.startTime) {
-      const parsedStartTime = parseDateTime(createPointageDto.startTime.toString());
-      if (!isNaN(parsedStartTime.getTime())) {
-        createPointageDto.startTime = parsedStartTime;
-      } else {
-        throw new Error('Invalid startTime format');
+      if (createPointageDto.startTime) {
+        const parsedStartTime = parseDateTime(
+          createPointageDto.startTime.toString(),
+        );
+        if (!isNaN(parsedStartTime.getTime())) {
+          createPointageDto.startTime = parsedStartTime;
+        } else {
+          throw new Error('Invalid startTime format');
+        }
       }
-    }
 
-    if (createPointageDto.endTime) {
-      const parsedEndTime = parseDateTime(createPointageDto.endTime.toString());
-      if (!isNaN(parsedEndTime.getTime())) {
-        createPointageDto.endTime = parsedEndTime;
-      } else {
-        throw new Error('Invalid endTime format');
+      if (createPointageDto.endTime) {
+        const parsedEndTime = parseDateTime(
+          createPointageDto.endTime.toString(),
+        );
+        if (!isNaN(parsedEndTime.getTime())) {
+          createPointageDto.endTime = parsedEndTime;
+        } else {
+          throw new Error('Invalid endTime format');
+        }
       }
-    }
-    
+
       // Check if a pointage record already exists for the same day and employee
       const existingPointage = await this.pointageModel
         .findOne({
@@ -73,8 +75,11 @@ export class PointagesService {
         throw new HttpException('Employee not found', HttpStatus.NOT_FOUND);
       }
       if (employee.status === 'INACTIVE') {
-        throw new HttpException('Inactive employee cannot create pointage', HttpStatus.UNAUTHORIZED);
-      }  
+        throw new HttpException(
+          'Inactive employee cannot create pointage',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
       const salaire = employee.salary;
 
       // Save the record with the additional salaire field
@@ -84,13 +89,13 @@ export class PointagesService {
       });
 
       // Format startTime and endTime before returning
-    const formattedPointage = {
-      ...pointage.toJSON(),
-      startTime: formatDateTime(pointage.startTime),
-      endTime: formatDateTime(pointage.endTime),
-    };
+      const formattedPointage = {
+        ...pointage.toJSON(),
+        startTime: formatDateTime(pointage.startTime),
+        endTime: formatDateTime(pointage.endTime),
+      };
 
-    return formattedPointage
+      return formattedPointage;
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
@@ -233,6 +238,61 @@ export class PointagesService {
 
   remove(id: number) {
     return `This action removes a #${id} pointage`;
+  }
+
+  // salary calculation for each user
+  async findAllSalaryPayments(options): Promise<any> {
+    console.log("🚀 ~ PointagesService ~ findAllSalaryPayments ~ options:", options)
+    options.filter.deleted = false;
+
+    // Parse and format start date to ISODate
+    const startDate = parseDate(options.filter.startDate);
+    const endDate = parseDate(options.filter.endDate);
+
+    const aggregationPipeline = [
+      {
+        $match: {
+          deleted: false,
+          created_at: { $gte: startDate, $lte: endDate }, // Filter by date range
+        },
+      },
+      {
+        $group: {
+          _id: '$employee',
+          daysWorked: { $sum: 1 }, // Count the number of pointages for each employee
+        },
+      },
+      {
+        $lookup: {
+          from: 'users', // Collection name where users (employees) are stored
+          localField: '_id',
+          foreignField: '_id',
+          as: 'employee',
+        },
+      },
+      {
+        $unwind: '$employee', // Unwind the array created by $lookup to get single user document
+      },
+      {
+        $project: {
+          name: { $concat: ["$employee.firstname", " ", "$employee.lastname"] },
+          salaryType: '$employee.salaryType',
+          days : '$daysWorked',
+          amount: {
+            $cond: {
+              if: { $eq: ['$employee.salaryType', 'DAILY'] },
+              then: { $multiply: ['$employee.salary', '$daysWorked'] }, // Calculate total salary for DAILY salary type
+              else: '$employee.salary', // Return monthly salary without calculation for MONTHLY salary type
+            },
+          },
+        },
+      },
+    ];
+
+    const salaryPayments = await this.pointageModel
+      .aggregate(aggregationPipeline)
+      .exec();
+    return salaryPayments;
   }
 
   /**

@@ -854,8 +854,8 @@ export class ChargesService {
   }
 
   // function for report - SPA stats
-   // function for report get revenus of SPA
-   async getSpaRevenus(options) {
+  // function for report get revenus of SPA
+  async getSpaRevenus(options) {
     try {
       if (!options.filter?.startDate || !options.filter?.endDate) {
         throw new HttpException(
@@ -945,11 +945,55 @@ export class ChargesService {
       }
 
       return {
-        data : totalsPerDay,
+        data: totalsPerDay,
         totalSpa: _totalRevenue,
         totalDepenses: _totalCharges,
         totalNet: _totalProfit,
       };
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  // function for report - Charges grouped with total
+  async getChargesReport(options) {
+    try {
+      if (!options.filter?.startDate || !options.filter?.endDate) {
+        throw new HttpException(
+          'filter dates are missing',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      // Parse and format start date to ISODate
+      const startDate = parseDate(options.filter.startDate);
+      const endDate = parseDate(options.filter.endDate);
+
+      const aggregationPipeline = [
+        {
+          $match: {
+            deleted: false,
+            date: { $gte: startDate, $lte: endDate }, // Filter by date range
+          },
+        },
+        {
+          $group: {
+            _id: '$name', // Group by name
+            totalPrice: { $sum: '$price' }, // Calculate total price for each group
+          },
+        },
+        {
+          $project: {
+            _id: 0, // Exclude _id field
+            name: '$_id', // Rename _id to name
+            totalPrice: 1, // Include totalPrice field
+          },
+        },
+      ];
+
+      const charges = await this.chargeModel
+        .aggregate(aggregationPipeline)
+        .exec();
+      return charges;
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }

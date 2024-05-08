@@ -21,6 +21,13 @@ export class PointagesController {
     return this.pointagesService.findAll(query);
   }
   @UseGuards(AuthJwtAuthGuard)
+  @Get('salary-report')
+  findAllSalaryPayments(@Request() request, @Req() req: ReqOptions) {
+    let query = req.query.s ? JSON.parse(req.query.s as string) : {};
+    if (!query.filter) query.filter = {};
+    return this.pointagesService.findAllSalaryPayments(query);
+  }
+  @UseGuards(AuthJwtAuthGuard)
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.pointagesService.findOne(id);
@@ -43,4 +50,6 @@ export class PointagesController {
   remove(@Param('id') id: string) {
     return this.pointagesService.remove(+id);
   }
+
+  
 }
