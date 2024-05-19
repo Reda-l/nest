@@ -59,6 +59,14 @@ export class ChargesController {
   }
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
   @Roles(Role.SuperAdmin, Role.Admin, Role.Cassier)
+  @Get("payments-report")
+  getPaymentsReport(@Req() req: ReqOptions) {
+    let query = req.query.s ? JSON.parse(req.query.s as string) : {};
+    if (!query.filter) query.filter = {};
+    return this.chargesService.getPaymentsReport(query);
+  }
+  @UseGuards(AuthJwtAuthGuard, RolesGuard)
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Cassier)
   @Get("progress-stats")
   getProgressStats(@Req() req: ReqOptions) {
     let query = req.query.s ? JSON.parse(req.query.s as string) : {};

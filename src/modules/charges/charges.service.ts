@@ -25,7 +25,6 @@ export class ChargesService {
     try {
       // //upload image
       if (createChargeDto.image && typeof createChargeDto.image === 'object') {
-        console.log('savin......');
         const imageUrl = await uploadFirebaseFile(
           createChargeDto.image,
           'spa-charges',
@@ -38,6 +37,7 @@ export class ChargesService {
           _id: charge._id,
           name: charge.name,
           price: charge.price,
+          payment : charge.payment,
           reason: charge.reason,
           date: formatDate(new Date(charge.date)),
           responsable: charge.responsable,
@@ -141,6 +141,7 @@ export class ChargesService {
         _id: doc._id,
         name: doc.name,
         price: doc.price,
+        payment : doc.payment,
         reason: doc.reason,
         date: formatDate(new Date(doc.date)),
         responsable: doc.responsable,
@@ -994,6 +995,100 @@ export class ChargesService {
         .aggregate(aggregationPipeline)
         .exec();
       return charges;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  // function for payments report
+  async getPaymentsReport(options){
+    console.log(options)
+    try {
+      if (!options.filter?.startDate || !options.filter?.endDate) {
+        throw new HttpException(
+          'filter dates are missing',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      // Parse and format start date to ISODate
+      const startDate = parseDate(options.filter.startDate);
+      const endDate = parseDate(options.filter.endDate);
+
+      const aggregationPipeline = [
+        {
+          $match: {
+            deleted: false,
+            date: { $gte: startDate, $lte: endDate }, // Filter by date range
+            payment: { $ne: null } // Exclude documents where payment is null
+          },
+        },
+        {
+          $group: {
+            _id: '$payment', // Group by payment
+            totalDepenses: { $sum: '$price' }, // Calculate total price for each group
+          },
+        },
+        {
+          $project: {
+            _id: 0, // Exclude _id field
+            type: '$_id', // Rename _id to name
+            totalDepenses: 1, // Include totalPrice field
+          },
+        },
+      ];
+
+      const caisse = await this.appointmentModel.aggregate([
+        {
+          $match: {
+            deleted: false,
+            date: { $gte: startDate, $lte: endDate }, // Filter by date range
+            'payment.paymentMethod': 'CASH',
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: '$payment.devise' },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            total: 1,
+          },
+        },
+      ]).exec();
+
+      const banque = await this.appointmentModel.aggregate([
+        {
+          $match: {
+            deleted: false,
+            date: { $gte: startDate, $lte: endDate }, // Filter by date range
+            'payment.debitPaymentMethod': 'DEBIT',
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: '$payment.debitDevise' },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            total: 1,
+          },
+        },
+      ]).exec();
+
+      const charges = await this.chargeModel
+        .aggregate(aggregationPipeline)
+        .exec();
+      return {
+        charges,
+        caisse : caisse[0].total,
+        // banque : banque[0].total
+      };
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }

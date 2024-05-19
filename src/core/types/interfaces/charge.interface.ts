@@ -4,6 +4,7 @@ export class Charge extends Document {
     date: string;
     name: string;
     price: number;
+    payment: string
     image: string
     reason: string;
     responsable: string;

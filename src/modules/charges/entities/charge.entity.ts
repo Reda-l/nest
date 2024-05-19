@@ -4,6 +4,7 @@ const chargeSchema = new mongoose.Schema(
   {
     name: { type: String }, // name of the service
     price: { type: Number },
+    payment : {type : String}, // CASH or DEBIT
     reason: { type: String },
     date: { type: Date, default: new Date() },
     responsable: { type: String },

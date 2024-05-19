@@ -58,6 +58,9 @@ const appointmentSchema = new mongoose.Schema(
       paymentMethod: { type: String, required: false },
       currency: { type: String, required: false },
       devise: { type: Number, required: false },
+      debitPaymentMethod: { type: String, required: false },
+      debitCurrency: { type: String, required: false },
+      debitDevise: { type: Number, required: false },
     },
     source: {
       type: String,
