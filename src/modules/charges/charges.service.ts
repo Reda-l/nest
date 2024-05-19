@@ -1042,13 +1042,18 @@ export class ChargesService {
           $match: {
             deleted: false,
             date: { $gte: startDate, $lte: endDate }, // Filter by date range
-            'payment.paymentMethod': 'CASH',
           },
+        },
+        {
+          $unwind: '$reservations',
+        },
+        {
+          $unwind: '$reservations.services',
         },
         {
           $group: {
             _id: null,
-            total: { $sum: '$payment.devise' },
+            total: { $sum: '$reservations.services.price' },
           },
         },
         {
@@ -1081,13 +1086,41 @@ export class ChargesService {
         },
       ]).exec();
 
+      const totalRevenu = await this.appointmentModel.aggregate([
+        {
+          $match: {
+            deleted: false,
+            date: { $gte: startDate, $lte: endDate }, // Filter by date range
+          },
+        },
+        {
+          $unwind: '$reservations',
+        },
+        {
+          $unwind: '$reservations.services',
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: '$reservations.services.price' },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            total: 1,
+          },
+        },
+      ]).exec();
+
       const charges = await this.chargeModel
         .aggregate(aggregationPipeline)
         .exec();
       return {
+        totalNet : totalRevenu[0].total - (charges[0].totalDepenses + charges[1].totalDepenses),
         charges,
-        caisse : caisse[0].total,
-        // banque : banque[0].total
+        caisse : caisse[0].total - banque[0].total,
+        banque : banque[0].total
       };
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
