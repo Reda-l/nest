@@ -34,16 +34,24 @@ export class PointagesService {
         }
       }
 
-      if (createPointageDto.endTime) {
-        const parsedEndTime = parseDateTime(
-          createPointageDto.endTime.toString(),
-        );
+      // Set endTime if not provided or invalid
+      if (!createPointageDto.endTime || isNaN(parseDateTime(createPointageDto.endTime.toString()).getTime())) {
+        // Set endTime to startTime + 10 hours
+        const startTime = createPointageDto.startTime || new Date(); // If startTime is not provided, use current time
+        const endTime = new Date(startTime.getTime() + 10 * 60 * 60 * 1000); // 10 hours later
+        createPointageDto.endTime = endTime;
+        createPointageDto.existingEndTime = false;
+    } else {
+        // Parse end time if provided
+        const parsedEndTime = parseDateTime(createPointageDto.endTime.toString());
         if (!isNaN(parsedEndTime.getTime())) {
-          createPointageDto.endTime = parsedEndTime;
+            createPointageDto.endTime = parsedEndTime;
+            createPointageDto.existingEndTime = true;
         } else {
-          throw new Error('Invalid endTime format');
+            throw new Error('Invalid endTime format');
         }
-      }
+    }
+
 
       // Check if a pointage record already exists for the same day and employee
       const existingPointage = await this.pointageModel
@@ -232,8 +240,110 @@ export class PointagesService {
     };
   }
 
-  update(id: number, updatePointageDto: UpdatePointageDto) {
-    return `This action updates a #${id} pointage`;
+  async update(
+    id: string,
+    updatePointageDto: UpdatePointageDto,
+  ): Promise<any | undefined> {
+    try {
+      // Find the pointage record by ID
+      const existingPointage = await this.pointageModel.findById(id).exec();
+      if (!existingPointage) {
+        throw new HttpException(
+          'Pointage record not found',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      // Parse start time and end time if provided in the update DTO
+      if (updatePointageDto.startTime) {
+        const parsedStartTime = parseDateTime(
+          updatePointageDto.startTime.toString(),
+        );
+        if (!isNaN(parsedStartTime.getTime())) {
+          updatePointageDto.startTime = parsedStartTime;
+        } else {
+          throw new Error('Invalid startTime format');
+        }
+      }
+
+      if (updatePointageDto.endTime) {
+        const parsedEndTime = parseDateTime(
+          updatePointageDto.endTime.toString(),
+        );
+        if (!isNaN(parsedEndTime.getTime())) {
+          updatePointageDto.endTime = parsedEndTime;
+        } else {
+          throw new Error('Invalid endTime format');
+        }
+      }
+
+      // Check if startTime and endTime overlap with existing records
+      if (updatePointageDto.startTime && updatePointageDto.endTime) {
+        const overlapPointage = await this.pointageModel
+          .findOne({
+            _id: { $ne: id }, // Exclude current pointage record
+            employee: updatePointageDto.employee,
+            $or: [
+              {
+                startTime: {
+                  $lt: updatePointageDto.endTime,
+                  $gte: new Date(
+                    new Date(updatePointageDto.startTime).setHours(0, 0, 0),
+                  ),
+                },
+              },
+              {
+                endTime: {
+                  $gt: updatePointageDto.startTime,
+                  $lte: new Date(
+                    new Date(updatePointageDto.endTime).setHours(23, 59, 59),
+                  ),
+                },
+              },
+            ],
+          })
+          .exec();
+
+        if (overlapPointage) {
+          throw new HttpException(
+            'Overlap with existing pointage record',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+
+      // Calculate and assign the salary for the pointage
+      const employee = await this.userService.findOne(
+        existingPointage.employee,
+      );
+      if (!employee) {
+        throw new HttpException('Employee not found', HttpStatus.NOT_FOUND);
+      }
+      if (employee.status === 'INACTIVE') {
+        throw new HttpException(
+          'Inactive employee cannot update pointage',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      const salaire = employee.salary;
+
+      // Update the record with the additional salaire field
+      await existingPointage.updateOne({ ...updatePointageDto, salaire });
+
+      // Fetch updated pointage record
+      const updatedPointage = await this.pointageModel.findById(id).exec();
+
+      // Format startTime and endTime before returning
+      const formattedPointage = {
+        ...updatedPointage.toJSON(),
+        startTime: formatDateTime(updatedPointage.startTime),
+        endTime: formatDateTime(updatedPointage.endTime),
+      };
+
+      return formattedPointage;
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
   }
 
   remove(id: number) {
@@ -242,7 +352,10 @@ export class PointagesService {
 
   // salary calculation for each user
   async findAllSalaryPayments(options): Promise<any> {
-    console.log("🚀 ~ PointagesService ~ findAllSalaryPayments ~ options:", options)
+    console.log(
+      '🚀 ~ PointagesService ~ findAllSalaryPayments ~ options:',
+      options,
+    );
     options.filter.deleted = false;
 
     // Parse and format start date to ISODate
@@ -275,9 +388,9 @@ export class PointagesService {
       },
       {
         $project: {
-          name: { $concat: ["$employee.firstname", " ", "$employee.lastname"] },
+          name: { $concat: ['$employee.firstname', ' ', '$employee.lastname'] },
           salaryType: '$employee.salaryType',
-          days : '$daysWorked',
+          days: '$daysWorked',
           amount: {
             $cond: {
               if: { $eq: ['$employee.salaryType', 'DAILY'] },

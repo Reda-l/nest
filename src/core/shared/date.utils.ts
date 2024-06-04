@@ -26,9 +26,9 @@ export function parseDate(dateString: string): Date {
 
 export function parseDateTime(dateTimeString: string): Date {
   // Check if the date string includes 'T' and 'Z'
-  if (dateTimeString.includes('T') && dateTimeString.includes('Z')) {
+  if (dateTimeString.includes('T')) {
     // Remove the 'T' and 'Z' and split the date and time parts
-    const dateTimeParts = dateTimeString.replace('T', ' ').replace('Z', '').split(' ');
+    const dateTimeParts = dateTimeString.replace('T', ' ').split(' ');
 
     // Extract date and time components
     const [datePart, timePart] = dateTimeParts;

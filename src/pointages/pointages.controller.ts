@@ -43,7 +43,7 @@ export class PointagesController {
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updatePointageDto: UpdatePointageDto) {
-    return this.pointagesService.update(+id, updatePointageDto);
+    return this.pointagesService.update(id, updatePointageDto);
   }
 
   @Delete(':id')

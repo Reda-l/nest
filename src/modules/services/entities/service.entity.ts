@@ -7,9 +7,9 @@ const serviceSchema = new mongoose.Schema(
   {
     name: { type: String }, // name of the service
     price: { type: Number },
-    image: { type: String },
+    image: { type: String,default: null },
     type: { type: String },
-    time: { type: Number },
+    time: { type: mongoose.Schema.Types.Mixed }, // Make time a mixed type to allow null
     description: { type: [String] }, // Array of strings for description
     status: { type: String, enum: StatusEnum, default: 'ACTIVE' }, // Enum for status with default value "ACTIVE"
   },

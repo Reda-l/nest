@@ -858,103 +858,131 @@ export class ChargesService {
   // function for report get revenus of SPA
   async getSpaRevenus(options) {
     try {
-      if (!options.filter?.startDate || !options.filter?.endDate) {
-        throw new HttpException(
-          'filter dates are missing',
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-      // Parse and format start date to ISODate
-      options.filter.startDate = parseDate(options.filter.startDate);
-      // Parse and format end date to ISODate
-      options.filter.endDate = parseDate(options.filter.endDate);
+        if (!options.filter?.startDate || !options.filter?.endDate) {
+            throw new HttpException(
+                'filter dates are missing',
+                HttpStatus.BAD_REQUEST,
+            );
+        }
+        // Parse and format start date to ISODate
+        options.filter.startDate = parseDate(options.filter.startDate);
+        // Parse and format end date to ISODate
+        options.filter.endDate = parseDate(options.filter.endDate);
 
-      let currentDate = new Date(options.filter.startDate);
-      const totalsPerDay: any = [];
-      let _totalRevenue = 0;
-      let _totalCharges = 0;
-      let _totalProfit = 0;
-      // Loop until the current date is greater than the end date
-      while (currentDate <= options.filter.endDate) {
-        const totalChargesPerDay = await this.chargeModel.aggregate([
-          {
-            $match: {
-              deleted: false,
-              date: currentDate,
-            },
-          },
-          {
-            $group: {
-              _id: null,
-              totalPrice: { $sum: '$price' },
-            },
-          },
-          {
-            $project: {
-              _id: 0, // Exclude _id from the result
-              totalPrice: 1,
-            },
-          },
-        ]);
-        const totalRevenuePerDay = await this.appointmentModel.aggregate([
-          {
-            $match: {
-              deleted: false,
-              date: currentDate,
-            },
-          },
-          {
-            $unwind: '$reservations',
-          },
-          {
-            $unwind: '$reservations.services',
-          },
-          {
-            $group: {
-              _id: null,
-              totalPrice: { $sum: '$reservations.services.price' },
-            },
-          },
-          {
-            $project: {
-              _id: 0,
-              totalPrice: 1,
-            },
-          },
-        ]);
-        const _totalRevenuePerDay =
-          totalRevenuePerDay.length > 0
-            ? totalRevenuePerDay[0].totalPrice -
-              (await this.getTotalDiscount(currentDate, currentDate))
-            : 0;
-        const _totalChargesPerDay =
-          totalChargesPerDay.length > 0 ? totalChargesPerDay[0].totalPrice : 0;
-        const _totalProfitPerDay = _totalRevenuePerDay - _totalChargesPerDay;
+        let currentDate = new Date(options.filter.startDate);
+        const totalsPerDay: any = [];
+        let _totalRevenue = 0;
+        let _totalCharges = 0;
+        let _totalProfit = 0;
+        let _totalCredits = 0; // Initialize total credits
+        // Loop until the current date is greater than the end date
+        while (currentDate <= options.filter.endDate) {
+            const totalChargesPerDay = await this.chargeModel.aggregate([
+                {
+                    $match: {
+                        deleted: false,
+                        date: currentDate,
+                    },
+                },
+                {
+                    $group: {
+                        _id: null,
+                        totalPrice: { $sum: '$price' },
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0, // Exclude _id from the result
+                        totalPrice: 1,
+                    },
+                },
+            ]);
+            const totalRevenuePerDay = await this.appointmentModel.aggregate([
+                {
+                    $match: {
+                        deleted: false,
+                        date: currentDate,
+                    },
+                },
+                {
+                    $unwind: '$reservations',
+                },
+                {
+                    $unwind: '$reservations.services',
+                },
+                {
+                    $group: {
+                        _id: null,
+                        totalPrice: { $sum: '$reservations.services.price' },
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        totalPrice: 1,
+                    },
+                },
+            ]);
+            const totalCreditPerDay = await this.appointmentModel.aggregate([
+                {
+                    $match: {
+                        deleted: false,
+                        date: currentDate,
+                        'payment.debitPaymentMethod': 'CARD',
+                    },
+                },
+                {
+                    $group: {
+                        _id: null,
+                        total: { $sum: '$payment.debitDevise' },
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        total: 1,
+                    },
+                },
+            ]).exec();
+            const _totalRevenuePerDay =
+                totalRevenuePerDay.length > 0
+                    ? totalRevenuePerDay[0].totalPrice -
+                      (await this.getTotalDiscount(currentDate, currentDate))
+                    : 0;
+            const _totalChargesPerDay =
+                totalChargesPerDay.length > 0 ? totalChargesPerDay[0].totalPrice : 0;
+            const _totalProfitPerDay = _totalRevenuePerDay - _totalChargesPerDay;
+            const _totalCreditPerDay =
+                totalCreditPerDay.length > 0 ? totalCreditPerDay[0].total : 0; // Extract credit total
 
-        _totalRevenue += _totalRevenuePerDay;
-        _totalCharges += _totalChargesPerDay;
-        _totalProfit += _totalProfitPerDay;
-        totalsPerDay.push({
-          date: formatDate(currentDate),
-          spa: _totalRevenuePerDay,
-          total: _totalRevenuePerDay,
-          depenses: _totalChargesPerDay,
-          net: _totalRevenuePerDay - _totalChargesPerDay,
-        });
-        // Increment the current date by one day
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
+            _totalRevenue += _totalRevenuePerDay;
+            _totalCharges += _totalChargesPerDay;
+            _totalProfit += _totalProfitPerDay;
+            _totalCredits += _totalCreditPerDay; // Add credit total to overall credits
+            totalsPerDay.push({
+                date: formatDate(currentDate),
+                spa: _totalRevenuePerDay,
+                total: _totalRevenuePerDay,
+                depenses: _totalChargesPerDay,
+                net: _totalRevenuePerDay - _totalChargesPerDay,
+                credits: _totalCreditPerDay, // Add credits to daily totals
+            });
+            // Increment the current date by one day
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
 
-      return {
-        data: totalsPerDay,
-        totalSpa: _totalRevenue,
-        totalDepenses: _totalCharges,
-        totalNet: _totalProfit,
-      };
+        return {
+            data: totalsPerDay,
+            totalSpa: _totalRevenue,
+            totalDepenses: _totalCharges,
+            totalCredits: _totalCredits, // Include total credits in the returned object
+            totalNet: _totalProfit,
+        };
     } catch (error) {
-      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+        throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
-  }
+}
+
 
   // function for report - Charges grouped with total
   async getChargesReport(options) {
@@ -1069,7 +1097,7 @@ export class ChargesService {
           $match: {
             deleted: false,
             date: { $gte: startDate, $lte: endDate }, // Filter by date range
-            'payment.debitPaymentMethod': 'DEBIT',
+            'payment.debitPaymentMethod': 'CARD',
           },
         },
         {
