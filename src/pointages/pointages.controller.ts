@@ -48,7 +48,7 @@ export class PointagesController {
   @UseGuards(AuthJwtAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.pointagesService.remove(id);
+    return this.pointagesService.permaRemove(id);
   }
 
   

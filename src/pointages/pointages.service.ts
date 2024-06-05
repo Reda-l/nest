@@ -368,6 +368,19 @@ export class PointagesService {
     }
   }
 
+  async permaRemove(id: string): Promise<Pointage | undefined> {
+    const pointage = await this.pointageModel.findById(id);
+    if (!pointage) {
+      throw new HttpException(
+        `Could not find pointage with id ${id}`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    // delete the pointage
+    await this.pointageModel.deleteOne({ _id: id });
+    return pointage;
+  }
+
   // salary calculation for each user
   async findAllSalaryPayments(options): Promise<any> {
     console.log(
