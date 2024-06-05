@@ -35,7 +35,7 @@ export class AuthController {
           lastname: user.lastname,
           role: user.role,
           email: user.email,
-          imageUrl: user.imageUrl,
+          picture: req.user.picture,
           phoneNumber : user.phoneNumber,
           lastLoginAt: user.lastLoginAt
         },
