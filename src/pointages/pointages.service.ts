@@ -346,8 +346,26 @@ export class PointagesService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} pointage`;
+  // soft delete the pointage
+  async remove(id: string): Promise<Pointage | undefined> {
+    try {
+      const pointage = await this.pointageModel.findById(id);
+      if (!pointage) {
+        throw new HttpException(
+          `Could not find pointage with id ${id}`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      // Perform the soft delete by setting deleted to true
+      pointage.deleted = true;
+      await pointage.save();
+      return pointage;
+    } catch (error) {
+      throw new HttpException(
+        `Error while removing pointage: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   // salary calculation for each user

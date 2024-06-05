@@ -40,15 +40,15 @@ export class PointagesController {
     if (!query.filter) query.filter = {};
     return this.pointagesService.getPointageByUserId(userId,query);
   }
-
+  @UseGuards(AuthJwtAuthGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updatePointageDto: UpdatePointageDto) {
     return this.pointagesService.update(id, updatePointageDto);
   }
-
+  @UseGuards(AuthJwtAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.pointagesService.remove(+id);
+    return this.pointagesService.remove(id);
   }
 
   

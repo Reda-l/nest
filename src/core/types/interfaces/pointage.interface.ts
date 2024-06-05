@@ -4,4 +4,5 @@ export class Pointage extends Document {
   startTime: Date;
   endTime?: Date;
   salaire?:number;
+  deleted?:boolean;
 }
