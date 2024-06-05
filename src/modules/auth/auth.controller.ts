@@ -56,7 +56,7 @@ export class AuthController {
       firstname: req.user.firstname,
       lastname: req.user.lastname,
       email: req.user.email,
-      imageUrl: req.user.imageUrl,
+      picture: req.user.picture,
       lastLoginAt: req.user.lastLoginAt
     }
   }
