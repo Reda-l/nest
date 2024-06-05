@@ -397,7 +397,7 @@ export class PointagesService {
       {
         $match: {
           deleted: false,
-          created_at: { $gte: startDate, $lte: endDate }, // Filter by date range
+          startTime: { $gte: startDate, $lte: endDate }, // Filter by date range
         },
       },
       {
