@@ -23,7 +23,7 @@ const appointmentSchema = new mongoose.Schema(
             price: { type: Number, required: true },
             image: { type: String },
             type: { type: String },
-            time: { type: Number },
+            time: { type: mongoose.Schema.Types.Mixed }, // Make time a mixed type to allow null
             description: { type: [String] },
           },
         ],
