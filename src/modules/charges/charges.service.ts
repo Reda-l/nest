@@ -508,7 +508,7 @@ export class ChargesService {
               _id: null,
               appointments: { $push: '$$ROOT' },
               totalPrice: { $sum: '$reservations.services.price' },
-              totalClients: { $addToSet: '$reservations.fullname' },
+              totalClients: { $addToSet: '$reservations._id' },
               count: { $sum: 1 }, // Count the total number of reservations
             },
           },
@@ -522,6 +522,7 @@ export class ChargesService {
             },
           },
         ]);
+
       const currentMonthClients =
         currentMonthTotalRevenue.length > 0
           ? currentMonthTotalRevenue[0].totalClients
@@ -620,6 +621,8 @@ export class ChargesService {
           : 0;
       const previousMonthProfit =
         previousMonthTotalRevenue - previousMonthTotalCharges;
+
+
       return {
         expenses: {
           value: currentMonthTotalCharges,
