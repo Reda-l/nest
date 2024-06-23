@@ -62,6 +62,7 @@ export class ChargesController {
   @Get("payments-report")
   getPaymentsReport(@Req() req: ReqOptions) {
     let query = req.query.s ? JSON.parse(req.query.s as string) : {};
+    console.log("🚀 ~ ChargesController ~ getPaymentsReport ~ query:", query)
     if (!query.filter) query.filter = {};
     return this.chargesService.getPaymentsReport(query);
   }

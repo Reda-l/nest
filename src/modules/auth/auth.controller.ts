@@ -14,6 +14,7 @@ export class AuthController {
   async login(@Request() req, @Body() userDTO: CreateAuthDto) {
     try {
       const user = await this.userService.findByLogin(userDTO) as any;
+      console.log("🚀 ~ AuthController ~ login ~ user:", user)
       if (!user || user.status === 'REJECTED') {
         throw new HttpException('User account is disabled, please contact your administration or your lender', HttpStatus.UNAUTHORIZED);
       }
@@ -28,6 +29,7 @@ export class AuthController {
       });
 
       const token = await this.authService.signPayload(payload);
+      console.log("🚀 ~ AuthController ~ login ~ token:", token)
       const userRO = {
         user: {
           _id: user._id,
@@ -35,14 +37,16 @@ export class AuthController {
           lastname: user.lastname,
           role: user.role,
           email: user.email,
-          picture: req.user.picture,
+          picture: user.picture || null,
           phoneNumber : user.phoneNumber,
           lastLoginAt: user.lastLoginAt
         },
         accessToken: token,
       }
+      console.log("🚀 ~ AuthController ~ login ~ userRO:", userRO)
       return userRO;
     } catch (error) {
+      console.log("🚀 ~ AuthController ~ login ~ error:", error)
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }

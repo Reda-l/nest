@@ -1084,7 +1084,7 @@ export class ChargesService {
       // Parse and format start date to ISODate
       const startDate = parseDate(options.filter.startDate);
       const endDate = parseDate(options.filter.endDate);
-
+  
       const aggregationPipeline = [
         {
           $match: {
@@ -1107,7 +1107,7 @@ export class ChargesService {
           },
         },
       ];
-
+  
       const caisse = await this.appointmentModel
         .aggregate([
           {
@@ -1136,7 +1136,7 @@ export class ChargesService {
           },
         ])
         .exec();
-
+  
       const banque = await this.appointmentModel
         .aggregate([
           {
@@ -1160,7 +1160,7 @@ export class ChargesService {
           },
         ])
         .exec();
-
+  
       const totalRevenu = await this.appointmentModel
         .aggregate([
           {
@@ -1189,20 +1189,27 @@ export class ChargesService {
           },
         ])
         .exec();
-
+  
       const charges = await this.chargeModel
         .aggregate(aggregationPipeline)
         .exec();
+  
+      // Handling empty results
+      const totalRevenuValue = totalRevenu.length > 0 ? totalRevenu[0].total : 0;
+      const caisseValue = caisse.length > 0 ? caisse[0].total : 0;
+      const banqueValue = banque.length > 0 ? banque[0].total : 0;
+      const totalDepenses = charges.reduce((sum, charge) => sum + (charge.totalDepenses || 0), 0);
+  
       return {
-        totalNet:
-          totalRevenu[0].total -
-          (charges[0].totalDepenses + charges[1].totalDepenses),
-        charges,
-        caisse: caisse[0].total - banque[0].total,
-        banque: banque[0].total,
+        totalNet: totalRevenuValue - totalDepenses,
+        charges: charges.length > 0 ? charges : [],
+        caisse: caisseValue - banqueValue,
+        banque: banqueValue,
       };
     } catch (error) {
+      console.log("🚀 ~ ChargesService ~ getPaymentsReport ~ error:", error);
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
+  
 }
