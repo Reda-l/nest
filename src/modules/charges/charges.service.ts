@@ -1198,13 +1198,14 @@ export class ChargesService {
       const totalRevenuValue = totalRevenu.length > 0 ? totalRevenu[0].total : 0;
       const caisseValue = caisse.length > 0 ? caisse[0].total : 0;
       const banqueValue = banque.length > 0 ? banque[0].total : 0;
-      const totalDepenses = charges.reduce((sum, charge) => sum + (charge.totalDepenses || 0), 0);
+      // const totalDepenses = charges.reduce((sum, charge) => sum + (charge.totalDepenses || 0), 0);
   
       return {
-        totalNet: totalRevenuValue - totalDepenses,
+        totalNet: totalRevenuValue,
         charges: charges.length > 0 ? charges : [],
         caisse: caisseValue - banqueValue,
         banque: banqueValue,
+
       };
     } catch (error) {
       console.log("🚀 ~ ChargesService ~ getPaymentsReport ~ error:", error);
