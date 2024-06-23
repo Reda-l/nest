@@ -908,6 +908,7 @@ export class ChargesService {
             $match: {
               deleted: false,
               date: currentDate,
+              status: 'PAYED', // Only count appointments with status PAYED
             },
           },
           {
@@ -934,6 +935,7 @@ export class ChargesService {
             $match: {
               deleted: false,
               date: currentDate,
+              status: 'PAYED', // Only count appointments with status PAYED
             },
           },
           {
@@ -966,6 +968,7 @@ export class ChargesService {
               $match: {
                 deleted: false,
                 date: currentDate,
+                status: 'PAYED', // Only count appointments with status PAYED
                 'payment.debitPaymentMethod': 'CARD',
               },
             },
