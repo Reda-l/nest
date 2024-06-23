@@ -211,6 +211,7 @@ export class ChargesService {
             $match: {
               deleted: false,
               date: currentDate,
+              status: 'PAYED', // Only count appointments with status PAYED
             },
           },
           {
@@ -310,6 +311,7 @@ export class ChargesService {
           $match: {
             deleted: false,
             date: { $gte: startDate, $lte: endDate },
+            status: 'PAYED', // Only count appointments with status PAYED
           },
         },
         {
@@ -491,6 +493,7 @@ export class ChargesService {
                 $gte: options.filter.startDate, // Start date
                 $lte: options.filter.endDate, // End date
               },
+              status: 'PAYED', // Only count appointments with status PAYED
             },
           },
           {
@@ -570,6 +573,7 @@ export class ChargesService {
                 $gte: previousMonthStartDate, // Start date
                 $lte: previousMonthEndDate, // End date
               },
+              status: 'PAYED', // Only count appointments with status PAYED
             },
           },
           {
@@ -1114,6 +1118,7 @@ export class ChargesService {
             $match: {
               deleted: false,
               date: { $gte: startDate, $lte: endDate }, // Filter by date range
+              status: 'PAYED', // Only count appointments with status PAYED
             },
           },
           {
@@ -1167,6 +1172,7 @@ export class ChargesService {
             $match: {
               deleted: false,
               date: { $gte: startDate, $lte: endDate }, // Filter by date range
+              status: 'PAYED', // Only count appointments with status PAYED
             },
           },
           {
