@@ -190,55 +190,56 @@ export class PointagesService {
       const [month, year] = dateString.split('-').map(Number);
       // Format the date as MM-YYYY
       formattedDate = `${month.toString().padStart(2, '0')}-${year}`;
-
+  
       // Calculate the first and last day of the specified month
       const firstDayOfMonth = new Date(Date.UTC(year, month - 1, 1));
       const lastDayOfMonth = new Date(Date.UTC(year, month, 0));
-
+  
       // Update the date filter to include the entire month
       options.filter.startTime = {
         $gte: firstDayOfMonth,
         $lte: lastDayOfMonth,
       };
     }
-
-    const query = this.pointageModel.find(options.filter);
-
-    if (options.sort) {
-      query.sort(options.sort);
-    } else {
-      query.sort({ created_at: -1 }); // Default sort by created_at in descending order
-    }
-    if (options.select && options.select !== '') {
-      query.select(options.select);
-    }
-
-    const data = await query
+  
+    // Execute the query to find pointages
+    const data = await this.pointageModel.find(options.filter)
       .populate({
         path: 'employee',
         select: '_id firstname lastname email salaryType salary status role',
         model: 'User',
       })
+      .sort(options.sort || { created_at: -1 }) // Sort by provided options or default to descending created_at
+      .select(options.select || '') // Select fields based on provided options or select all by default
       .exec();
-
+  
+    // Find the employee based on userId
+    const employee = await this.userService.findOne(userId)
+      
+  
+    // Map pointages if found, otherwise an empty array
     const pointages = data.map((pointage) => ({
       _id: pointage._id,
       startTime: formatDateTime(new Date(pointage.startTime)),
       endTime: formatDateTime(new Date(pointage.endTime)),
       salaire: pointage.salaire,
     }));
-
+  
+    // Determine the stats based on the presence of pointages
     const stats = {
       date: formattedDate,
-      status: data.length > 0 ? 'PAID' : 'UNPAID', // Assuming if there are any pointages, it's paid
+      status: data.length > 0 ? 'PAID' : 'UNPAID',
     };
-
+  
+    // Return the employee data regardless of pointages existence
     return {
-      employee: data[0]?.employee,
+      employee: employee || null, // Ensure employee data is returned based on userId
       stats,
       pointages,
     };
   }
+  
+  
 
   async update(
     id: string,
