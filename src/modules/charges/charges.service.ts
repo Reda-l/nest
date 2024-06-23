@@ -283,6 +283,7 @@ export class ChargesService {
           $match: {
             deleted: false,
             date: { $gte: startDate, $lte: endDate },
+            status: 'PAYED', // Only count appointments with status PAYED
           },
         },
         {
@@ -1046,7 +1047,7 @@ export class ChargesService {
       // Parse and format start date to ISODate
       const startDate = parseDate(options.filter.startDate);
       const endDate = parseDate(options.filter.endDate);
-
+  
       const aggregationPipeline = [
         {
           $match: {
@@ -1056,27 +1057,29 @@ export class ChargesService {
         },
         {
           $group: {
-            _id: '$name', // Group by name
+            _id: {
+              name: '$name', // Group by name
+              type: '$type'  // Include type in the grouping
+            },
             totalPrice: { $sum: '$price' }, // Calculate total price for each group
           },
         },
         {
           $project: {
             _id: 0, // Exclude _id field
-            name: '$_id', // Rename _id to name
+            name: { $concat: ['(', '$_id.name', ')',' ','$_id.type'] }, // Format name as (type)name
             totalPrice: 1, // Include totalPrice field
           },
         },
       ];
-
-      const charges = await this.chargeModel
-        .aggregate(aggregationPipeline)
-        .exec();
+  
+      const charges = await this.chargeModel.aggregate(aggregationPipeline).exec();
       return charges;
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
+  
 
   // function for payments report
   async getPaymentsReport(options) {
