@@ -892,6 +892,8 @@ export class ChargesService {
       let _totalProfit = 0;
       let _totalCredits = 0; // Initialize total credits
       let _totalBeldiRevenue = 0; // Initialize total Beldi revenue
+      let _totalCommissionTrue = 0;
+      let _totalCommissionFalse = 0;
   
       // Loop until the current date is greater than the end date
       while (currentDate <= options.filter.endDate) {
@@ -1070,6 +1072,8 @@ export class ChargesService {
         _totalProfit += _totalProfitPerDay;
         _totalCredits += _totalCreditPerDay; // Add credit total to overall credits
         _totalBeldiRevenue += _totalBeldiRevenuePerDay;
+        _totalCommissionTrue += _totalCommissionTruePerDay;
+        _totalCommissionFalse += _totalCommissionFalsePerDay;
   
         totalsPerDay.push({
           date: formatDate(currentDate),
@@ -1077,7 +1081,7 @@ export class ChargesService {
           spa: _totalRevenuePerDay - _totalBeldiRevenuePerDay,
           total: _totalRevenuePerDay,
           depenses: _totalChargesPerDay,
-          net: _totalRevenuePerDay - _totalChargesPerDay,
+          net: _totalRevenuePerDay - _totalChargesPerDay - _totalCommissionTruePerDay,
           credits: _totalCreditPerDay, // Add credits to daily totals
           commissionFalse: _totalCommissionFalsePerDay,
           commissionTrue: _totalCommissionTruePerDay,
@@ -1094,11 +1098,14 @@ export class ChargesService {
         totalDepenses: _totalCharges,
         totalCredits: _totalCredits, // Include total credits in the returned object
         totalNet: _totalProfit,
+        totalCommissionTrue: _totalCommissionTrue,
+        totalCommissionFalse: _totalCommissionFalse,
       };
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
+  
   
 
   // function for report - Charges grouped with total
@@ -1140,11 +1147,65 @@ export class ChargesService {
       ];
   
       const charges = await this.chargeModel.aggregate(aggregationPipeline).exec();
-      return charges;
+      const paidAppointmentsWithCommission = await this.getPaidAppointmentsWithCommission(options);
+
+      return {
+        charges,
+        commissionTrue : paidAppointmentsWithCommission.totalCommission
+      };
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
+
+  // function that gets the total commission in a date range
+  async getPaidAppointmentsWithCommission(options) {
+    try {
+      if (!options.filter?.startDate || !options.filter?.endDate) {
+        throw new HttpException(
+          'filter dates are missing',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      // Parse and format start date to ISODate
+      const startDate = parseDate(options.filter.startDate);
+      const endDate = parseDate(options.filter.endDate);
+  
+      const aggregationPipeline = [
+        {
+          $match: {
+            deleted: false,
+            status: 'PAYED',
+            'commission.payed': true,
+            date: { $gte: startDate, $lte: endDate }, // Filter by date range
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalCommission: { $sum: '$commission.value' }, // Calculate total commission
+            appointments: { $push: '$$ROOT' }, // Include all appointment details
+          },
+        },
+        {
+          $project: {
+            _id: 0, // Exclude _id field
+            totalCommission: 1, // Include total commission
+            appointments: 1, // Include appointments
+          },
+        },
+      ];
+  
+      const result = await this.appointmentModel.aggregate(aggregationPipeline).exec();
+      if (result.length === 0) {
+        return { totalCommission: 0, appointments: [] };
+      }
+      return result[0];
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
+  }
+  
   
 
   // function for payments report
