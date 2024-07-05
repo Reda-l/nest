@@ -365,6 +365,7 @@ export class ChargesService {
             date: { $gte: startDate, $lte: endDate },
             source: { $ne: null },
             deleted: false,
+            status : 'PAYED'
           },
         },
         {
@@ -1008,6 +1009,7 @@ export class ChargesService {
               deleted: false,
               date: currentDate,
               'commission.payed': false,
+              status:'PAYED'
             },
           },
           {
@@ -1030,6 +1032,7 @@ export class ChargesService {
               deleted: false,
               date: currentDate,
               'commission.payed': true,
+              status:'PAYED'
             },
           },
           {
