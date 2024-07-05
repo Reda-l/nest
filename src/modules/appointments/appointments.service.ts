@@ -96,8 +96,8 @@ export class AppointmentsService {
         }
       }
     }
-      if (options.filter?.commission?.payed) {
-        options.filter['commission.value'] = { $gt: 0 };
+    if (options.filter['commission.payed'] == false) {
+        options.filter['commission.value'] = { $gt: 0};
       }
     
     const query = this.appointmentModel.find(options.filter);
