@@ -203,6 +203,10 @@ export class AppointmentsService {
         updateAppointmentDto.date = parseDate(
           updateAppointmentDto.date.toString(),
         );
+        if (updateAppointmentDto.commission.date)
+          updateAppointmentDto.commission.date = parseDate(
+            updateAppointmentDto.commission.date.toString(),
+          );
       // Check if the status is set to 'CANCELED'
       const isCanceled = updateAppointmentDto.status === 'CANCELED';
       // Check if the status is set to 'CONFIRMED'

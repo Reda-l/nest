@@ -71,6 +71,7 @@ const appointmentSchema = new mongoose.Schema(
       type: { type: String, required: false }, // type Number or %
       value: { type: Number, required: false },
       payed: { type: Boolean, default: false },
+      date :{ type: Date, default:null }
     },
   },
   {
