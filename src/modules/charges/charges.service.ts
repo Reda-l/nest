@@ -277,7 +277,7 @@ export class ChargesService {
       // Parse and format start date to ISODate
       const startDate = parseDate(options.filter.startDate);
       const endDate = parseDate(options.filter.endDate);
-  
+
       const topServices = await this.appointmentModel.aggregate([
         {
           $match: {
@@ -307,7 +307,7 @@ export class ChargesService {
           $limit: 10, // Limit the results to 10 items
         },
       ]);
-  
+
       const topRevenuesPerDay = await this.appointmentModel.aggregate([
         {
           $match: {
@@ -358,14 +358,14 @@ export class ChargesService {
           $limit: 10, // Limit the results to 10 items
         },
       ]);
-  
+
       const topSources = await this.appointmentModel.aggregate([
         {
           $match: {
             date: { $gte: startDate, $lte: endDate },
             source: { $ne: null },
             deleted: false,
-            status : 'PAYED'
+            status: 'PAYED',
           },
         },
         {
@@ -388,16 +388,18 @@ export class ChargesService {
           $limit: 10, // Limit the results to 10 items
         },
       ]);
-  
-      const appointments = await this.appointmentModel.find({
-        $and: [
-          { 'commission.value': { $exists: true } },
-          { date: { $gte: startDate, $lte: endDate } },
-          { deleted: false },
-          {status : 'PAYED'}
-        ],
-      }).limit(10);
-  
+
+      const appointments = await this.appointmentModel
+        .find({
+          $and: [
+            { 'commission.value': { $exists: true } },
+            { date: { $gte: startDate, $lte: endDate } },
+            { deleted: false },
+            { status: 'PAYED' },
+          ],
+        })
+        .limit(10);
+
       const commissionData = appointments.map((appointment) => {
         let commissionValue = 0;
         if (appointment.commission.type === '%') {
@@ -422,7 +424,7 @@ export class ChargesService {
         const source = appointment.source.toLowerCase();
         return { source, value: commissionValue };
       });
-  
+
       // Grouping commissionData
       const groupedCommissionData = commissionData.reduce(
         (accumulator, currentValue) => {
@@ -436,9 +438,12 @@ export class ChargesService {
         },
         {},
       );
-  
-      const groupedCommissionArray = Object.values(groupedCommissionData).slice(0, 10); // Limit to 10 items
-  
+
+      const groupedCommissionArray = Object.values(groupedCommissionData).slice(
+        0,
+        10,
+      ); // Limit to 10 items
+
       return {
         topServices,
         topRevenuesPerDay,
@@ -449,7 +454,7 @@ export class ChargesService {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
-  
+
   async getProgressStats(options) {
     try {
       if (!options.filter?.startDate || !options.filter?.endDate) {
@@ -630,7 +635,6 @@ export class ChargesService {
           : 0;
       const previousMonthProfit =
         previousMonthTotalRevenue - previousMonthTotalCharges;
-
 
       return {
         expenses: {
@@ -885,7 +889,7 @@ export class ChargesService {
       options.filter.startDate = parseDate(options.filter.startDate);
       // Parse and format end date to ISODate
       options.filter.endDate = parseDate(options.filter.endDate);
-  
+
       let currentDate = new Date(options.filter.startDate);
       const totalsPerDay: any = [];
       let _totalRevenue = 0;
@@ -895,7 +899,7 @@ export class ChargesService {
       let _totalBeldiRevenue = 0; // Initialize total Beldi revenue
       let _totalCommissionTrue = 0;
       let _totalCommissionFalse = 0;
-  
+
       // Loop until the current date is greater than the end date
       while (currentDate <= options.filter.endDate) {
         const totalChargesPerDay = await this.chargeModel.aggregate([
@@ -918,7 +922,7 @@ export class ChargesService {
             },
           },
         ]);
-  
+
         const totalRevenuePerDay = await this.appointmentModel.aggregate([
           {
             $match: {
@@ -946,7 +950,7 @@ export class ChargesService {
             },
           },
         ]);
-  
+
         const totalBeldiRevenuePerDay = await this.appointmentModel.aggregate([
           {
             $match: {
@@ -979,76 +983,66 @@ export class ChargesService {
             },
           },
         ]);
-  
-        const totalCreditPerDay = await this.appointmentModel.aggregate([
-          {
-            $match: {
-              deleted: false,
-              date: currentDate,
-              status: 'PAYED', // Only count appointments with status PAYED
-              'payment.debitPaymentMethod': 'CARD',
+
+        const totalCreditPerDay = await this.appointmentModel
+          .aggregate([
+            {
+              $match: {
+                deleted: false,
+                date: currentDate,
+                status: 'PAYED', // Only count appointments with status PAYED
+                'payment.debitPaymentMethod': 'CARD',
+              },
             },
-          },
-          {
-            $group: {
-              _id: null,
-              total: { $sum: '$payment.debitDevise' },
+            {
+              $group: {
+                _id: null,
+                total: { $sum: '$payment.debitDevise' },
+              },
             },
-          },
-          {
-            $project: {
-              _id: 0,
-              total: 1,
+            {
+              $project: {
+                _id: 0,
+                total: 1,
+              },
             },
-          },
-        ]).exec();
-  
-        const totalCommissionFalsePerDay = await this.appointmentModel.aggregate([
-          {
-            $match: {
-              deleted: false,
-              date: currentDate,
-              'commission.payed': false,
-              status:'PAYED'
+          ])
+          .exec();
+
+        // Create start and end of the day in UTC
+const startOfDay = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate()));
+const endOfDay = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate(), 23, 59, 59, 999));
+
+
+        const totalCommissionTruePerDay = await this.appointmentModel.aggregate(
+          [
+            {
+              $match: {
+                deleted: false,
+                
+                'commission.payed': true,
+                'commission.date': {
+                  $gte: startOfDay,
+                  $lte: endOfDay,
+                },
+                status: 'PAYED',
+              },
             },
-          },
-          {
-            $group: {
-              _id: null,
-              total: { $sum: '$commission.value' },
+            {
+              $group: {
+                _id: null,
+                total: { $sum: '$commission.value' },
+              },
             },
-          },
-          {
-            $project: {
-              _id: 0,
-              total: 1,
+            {
+              $project: {
+                _id: 0,
+                total: 1,
+              },
             },
-          },
-        ]);
-  
-        const totalCommissionTruePerDay = await this.appointmentModel.aggregate([
-          {
-            $match: {
-              deleted: false,
-              date: currentDate,
-              'commission.payed': true,
-              status:'PAYED'
-            },
-          },
-          {
-            $group: {
-              _id: null,
-              total: { $sum: '$commission.value' },
-            },
-          },
-          {
-            $project: {
-              _id: 0,
-              total: 1,
-            },
-          },
-        ]);
-  
+          ],
+        );
+
         const _totalRevenuePerDay =
           totalRevenuePerDay.length > 0
             ? totalRevenuePerDay[0].totalPrice -
@@ -1059,41 +1053,42 @@ export class ChargesService {
         const _totalProfitPerDay = _totalRevenuePerDay - _totalChargesPerDay;
         const _totalCreditPerDay =
           totalCreditPerDay.length > 0 ? totalCreditPerDay[0].total : 0; // Extract credit total
-  
+
         const _totalBeldiRevenuePerDay =
           totalBeldiRevenuePerDay.length > 0
             ? totalBeldiRevenuePerDay[0].totalPrice
             : 0; // Calculate total Beldi revenue per day
-  
-        const _totalCommissionFalsePerDay =
-          totalCommissionFalsePerDay.length > 0 ? totalCommissionFalsePerDay[0].total : 0;
+
         const _totalCommissionTruePerDay =
-          totalCommissionTruePerDay.length > 0 ? totalCommissionTruePerDay[0].total : 0;
-  
+          totalCommissionTruePerDay.length > 0
+            ? totalCommissionTruePerDay[0].total
+            : 0;
+
         _totalRevenue += _totalRevenuePerDay;
         _totalCharges += _totalChargesPerDay;
         _totalProfit += _totalProfitPerDay;
         _totalCredits += _totalCreditPerDay; // Add credit total to overall credits
         _totalBeldiRevenue += _totalBeldiRevenuePerDay;
         _totalCommissionTrue += _totalCommissionTruePerDay;
-        _totalCommissionFalse += _totalCommissionFalsePerDay;
-  
+
         totalsPerDay.push({
           date: formatDate(currentDate),
           beldi: _totalBeldiRevenuePerDay,
           spa: _totalRevenuePerDay - _totalBeldiRevenuePerDay,
           total: _totalRevenuePerDay,
           depenses: _totalChargesPerDay,
-          net: _totalRevenuePerDay - _totalChargesPerDay - _totalCommissionTruePerDay,
+          net:
+            _totalRevenuePerDay -
+            _totalChargesPerDay -
+            _totalCommissionTruePerDay,
           credits: _totalCreditPerDay, // Add credits to daily totals
-          commissionFalse: _totalCommissionFalsePerDay,
           commissionTrue: _totalCommissionTruePerDay,
         });
-  
+
         // Increment the current date by one day
         currentDate.setDate(currentDate.getDate() + 1);
       }
-  
+
       return {
         data: totalsPerDay,
         totalBeldi: _totalBeldiRevenue,
@@ -1102,14 +1097,11 @@ export class ChargesService {
         totalCredits: _totalCredits, // Include total credits in the returned object
         totalNet: _totalProfit,
         totalCommissionTrue: _totalCommissionTrue,
-        totalCommissionFalse: _totalCommissionFalse,
       };
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
-  
-  
 
   // function for report - Charges grouped with total
   async getChargesReport(options) {
@@ -1123,7 +1115,7 @@ export class ChargesService {
       // Parse and format start date to ISODate
       const startDate = parseDate(options.filter.startDate);
       const endDate = parseDate(options.filter.endDate);
-  
+
       const aggregationPipeline = [
         {
           $match: {
@@ -1135,7 +1127,7 @@ export class ChargesService {
           $group: {
             _id: {
               name: '$name', // Group by name
-              type: '$type'  // Include type in the grouping
+              type: '$type', // Include type in the grouping
             },
             totalPrice: { $sum: '$price' }, // Calculate total price for each group
           },
@@ -1143,18 +1135,21 @@ export class ChargesService {
         {
           $project: {
             _id: 0, // Exclude _id field
-            name: { $concat: ['(', '$_id.name', ')',' ','$_id.type'] }, // Format name as (type)name
+            name: { $concat: ['(', '$_id.name', ')', ' ', '$_id.type'] }, // Format name as (type)name
             totalPrice: 1, // Include totalPrice field
           },
         },
       ];
-  
-      const charges = await this.chargeModel.aggregate(aggregationPipeline).exec();
-      const paidAppointmentsWithCommission = await this.getPaidAppointmentsWithCommission(options);
+
+      const charges = await this.chargeModel
+        .aggregate(aggregationPipeline)
+        .exec();
+      const paidAppointmentsWithCommission =
+        await this.getPaidAppointmentsWithCommission(options);
 
       return {
         charges,
-        commissionTrue : paidAppointmentsWithCommission.totalCommission
+        commissionTrue: paidAppointmentsWithCommission.totalCommission,
       };
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
@@ -1173,7 +1168,7 @@ export class ChargesService {
       // Parse and format start date to ISODate
       const startDate = parseDate(options.filter.startDate);
       const endDate = parseDate(options.filter.endDate);
-  
+
       const aggregationPipeline = [
         {
           $match: {
@@ -1198,8 +1193,10 @@ export class ChargesService {
           },
         },
       ];
-  
-      const result = await this.appointmentModel.aggregate(aggregationPipeline).exec();
+
+      const result = await this.appointmentModel
+        .aggregate(aggregationPipeline)
+        .exec();
       if (result.length === 0) {
         return { totalCommission: 0, appointments: [] };
       }
@@ -1208,8 +1205,6 @@ export class ChargesService {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
-  
-  
 
   // function for payments report
   async getPaymentsReport(options) {
@@ -1224,7 +1219,7 @@ export class ChargesService {
       // Parse and format start date to ISODate
       const startDate = parseDate(options.filter.startDate);
       const endDate = parseDate(options.filter.endDate);
-  
+
       const aggregationPipeline = [
         {
           $match: {
@@ -1247,7 +1242,7 @@ export class ChargesService {
           },
         },
       ];
-  
+
       const caisse = await this.appointmentModel
         .aggregate([
           {
@@ -1277,7 +1272,7 @@ export class ChargesService {
           },
         ])
         .exec();
-  
+
       const banque = await this.appointmentModel
         .aggregate([
           {
@@ -1301,7 +1296,7 @@ export class ChargesService {
           },
         ])
         .exec();
-  
+
       const totalRevenu = await this.appointmentModel
         .aggregate([
           {
@@ -1331,28 +1326,27 @@ export class ChargesService {
           },
         ])
         .exec();
-  
+
       const charges = await this.chargeModel
         .aggregate(aggregationPipeline)
         .exec();
-  
+
       // Handling empty results
-      const totalRevenuValue = totalRevenu.length > 0 ? totalRevenu[0].total : 0;
+      const totalRevenuValue =
+        totalRevenu.length > 0 ? totalRevenu[0].total : 0;
       const caisseValue = caisse.length > 0 ? caisse[0].total : 0;
       const banqueValue = banque.length > 0 ? banque[0].total : 0;
       // const totalDepenses = charges.reduce((sum, charge) => sum + (charge.totalDepenses || 0), 0);
-  
+
       return {
         totalNet: totalRevenuValue,
         charges: charges.length > 0 ? charges : [],
         caisse: caisseValue - banqueValue,
         banque: banqueValue,
-
       };
     } catch (error) {
-      console.log("🚀 ~ ChargesService ~ getPaymentsReport ~ error:", error);
+      console.log('🚀 ~ ChargesService ~ getPaymentsReport ~ error:', error);
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
-  
 }
