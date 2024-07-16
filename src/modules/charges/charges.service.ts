@@ -1175,7 +1175,7 @@ const endOfDay = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.get
             deleted: false,
             status: 'PAYED',
             'commission.payed': true,
-            date: { $gte: startDate, $lte: endDate }, // Filter by date range
+            'commission.date': { $gte: startDate, $lte: endDate }, // Filter by date range
           },
         },
         {
@@ -1338,11 +1338,15 @@ const endOfDay = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.get
       const banqueValue = banque.length > 0 ? banque[0].total : 0;
       // const totalDepenses = charges.reduce((sum, charge) => sum + (charge.totalDepenses || 0), 0);
 
+      const paidAppointmentsWithCommission =
+        await this.getPaidAppointmentsWithCommission(options);
+
       return {
         totalNet: totalRevenuValue,
         charges: charges.length > 0 ? charges : [],
         caisse: caisseValue - banqueValue,
         banque: banqueValue,
+        commissionTrue :paidAppointmentsWithCommission.totalCommission
       };
     } catch (error) {
       console.log('🚀 ~ ChargesService ~ getPaymentsReport ~ error:', error);
