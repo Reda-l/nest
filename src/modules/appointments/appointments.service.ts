@@ -203,7 +203,7 @@ export class AppointmentsService {
         updateAppointmentDto.date = parseDate(
           updateAppointmentDto.date.toString(),
         );
-        if (updateAppointmentDto.commission.date)
+        if (updateAppointmentDto.commission && updateAppointmentDto.commission.date)
           updateAppointmentDto.commission.date = parseDate(
             updateAppointmentDto.commission.date.toString(),
           );
