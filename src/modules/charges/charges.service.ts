@@ -847,6 +847,7 @@ export class ChargesService {
           $gte: startDate,
           $lte: endDate,
         },
+        status : 'PAYED'
       })
       .populate('discount');
 
@@ -871,6 +872,7 @@ export class ChargesService {
         }
       }
     }
+
     return totalDiscount | 0;
     // console.log("🚀 ~ ChargesService ~ getTotalDiscount ~ totalDiscount:", totalDiscount)
   }
@@ -950,6 +952,7 @@ export class ChargesService {
             },
           },
         ]);
+        console.log("🚀 ~ ChargesService ~ getSpaRevenus ~ totalRevenuePerDay:", totalRevenuePerDay)
   
         const totalBeldiRevenuePerDay = await this.appointmentModel.aggregate([
           {
@@ -1044,6 +1047,8 @@ export class ChargesService {
             ? totalRevenuePerDay[0].totalPrice -
               (await this.getTotalDiscount(currentDate, currentDate))
             : 0;
+            console.log("🚀 ~ ChargesService ~ getSpaRevenus ~ _totalRevenuePerDay:", _totalRevenuePerDay)
+
         const _totalChargesPerDay =
           totalChargesPerDay.length > 0 ? totalChargesPerDay[0].totalPrice : 0;
         const _totalProfitPerDay = _totalRevenuePerDay - _totalChargesPerDay;
@@ -1066,10 +1071,12 @@ export class ChargesService {
           _totalCommissionTruePerDay;
   
         _totalRevenue += _totalRevenuePerDay;
+        console.log("🚀 ~ ChargesService ~ getSpaRevenus ~ _totalRevenue:", _totalRevenue)
         _totalCharges += _totalChargesPerDay;
         _totalProfit += _totalProfitPerDay;
         _totalCredits += _totalCreditPerDay; // Add credit total to overall credits
         _totalBeldiRevenue += _totalBeldiRevenuePerDay;
+        console.log("🚀 ~ ChargesService ~ getSpaRevenus ~ _totalBeldiRevenue:", _totalBeldiRevenue)
         _totalCommissionTrue += _totalCommissionTruePerDay;
         _totalNet += _netPerDay; // Add daily net profit to the total net profit
   
