@@ -15,8 +15,8 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService, private emailService: EmailService) { }
 
-  @UseGuards(AuthJwtAuthGuard, RolesGuard)
-  @Roles(Role.SuperAdmin, Role.Admin,Role.Mannager)
+  // @UseGuards(AuthJwtAuthGuard, RolesGuard)
+  // @Roles(Role.SuperAdmin, Role.Admin,Role.Mannager)
   @Post()
   async create(@Body() createAppointmentDto: CreateAppointmentDto) {
     return await this.appointmentsService.create(createAppointmentDto);

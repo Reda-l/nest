@@ -24,8 +24,8 @@ export class ServicesController {
   create(@Body() createServiceDto: CreateServiceDto, @UploadedFile() file: Express.Multer.File) {
     return this.servicesService.create({ ...createServiceDto, image: file ? file : createServiceDto.image });
   }
-  @UseGuards(AuthJwtAuthGuard, RolesGuard)
-  @Roles(Role.SuperAdmin, Role.Admin, Role.Mannager)
+  // @UseGuards(AuthJwtAuthGuard, RolesGuard)
+  // @Roles(Role.SuperAdmin, Role.Admin, Role.Mannager)
   @Get()
   findAll(@Request() request, @Req() req: ReqOptions) {
     let query = req.query.s ? JSON.parse(req.query.s as string) : {};
