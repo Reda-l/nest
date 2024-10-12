@@ -9,7 +9,7 @@ const PointageSchema = new mongoose.Schema(
     },
     startTime: { type: Date, required: true },
     endTime: { type: Date },
-    existingEndTime: {type : Boolean, default:false},
+    existingEndTime: {type : Boolean, default:false},//
     daysWorked: { type: Number, default: 0 },
     salaire : { type: Number, default: 0 },
   },
