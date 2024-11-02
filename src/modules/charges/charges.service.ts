@@ -1368,6 +1368,7 @@ export class ChargesService {
   }
 
   // Function to get appointment counts grouped by service type within a date range
+// Function to get appointment counts and total price grouped by service type within a date range, only for PAYED appointments
 async getAppointmentServiceTypeReport(options) {
   try {
     // Check if required date filters are provided
@@ -1401,14 +1402,29 @@ async getAppointmentServiceTypeReport(options) {
               $cond: [{ $eq: ['$reservations.gender.name', 'female'] }, 1, 0]
             }
           },
+          femaleTotalPrice: {
+            $sum: {
+              $cond: [{ $eq: ['$reservations.gender.name', 'female'] }, '$reservations.services.price', 0]
+            }
+          },
           maleCount: {
             $sum: {
               $cond: [{ $eq: ['$reservations.gender.name', 'male'] }, 1, 0]
             }
           },
+          maleTotalPrice: {
+            $sum: {
+              $cond: [{ $eq: ['$reservations.gender.name', 'male'] }, '$reservations.services.price', 0]
+            }
+          },
           childCount: {
             $sum: {
               $cond: [{ $eq: ['$reservations.gender.name', 'child'] }, 1, 0]
+            }
+          },
+          childTotalPrice: {
+            $sum: {
+              $cond: [{ $eq: ['$reservations.gender.name', 'child'] }, '$reservations.services.price', 0]
             }
           },
         },
@@ -1418,8 +1434,11 @@ async getAppointmentServiceTypeReport(options) {
           _id: 0, // Exclude _id field
           serviceType: '$_id', // Include serviceType
           femaleCount: 1,
+          femaleTotalPrice: 1,
           maleCount: 1,
+          maleTotalPrice: 1,
           childCount: 1,
+          childTotalPrice: 1,
         },
       },
     ];
@@ -1433,5 +1452,6 @@ async getAppointmentServiceTypeReport(options) {
     throw new HttpException(error, HttpStatus.BAD_REQUEST);
   }
 }
+
 
 }
