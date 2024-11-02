@@ -1366,4 +1366,72 @@ export class ChargesService {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
+
+  // Function to get appointment counts grouped by service type within a date range
+async getAppointmentServiceTypeReport(options) {
+  try {
+    // Check if required date filters are provided
+    if (!options.filter?.startDate || !options.filter?.endDate) {
+      throw new HttpException('Filter dates are missing', HttpStatus.BAD_REQUEST);
+    }
+
+    // Parse and format start and end dates to ISODate
+    const startDate = parseDate(options.filter.startDate);
+    const endDate = parseDate(options.filter.endDate);
+
+    const aggregationPipeline = [
+      {
+        $match: {
+          deleted: false,
+          status: 'PAYED', // Filter by PAYED status
+          date: { $gte: startDate, $lte: endDate }, // Filter by date range
+        },
+      },
+      { 
+        $unwind: '$reservations' // Unwind the reservations array to process each reservation separately
+      },
+      { 
+        $unwind: '$reservations.services' // Unwind the services array to process each service separately
+      },
+      {
+        $group: {
+          _id: '$reservations.services.type', // Group by service type
+          femaleCount: {
+            $sum: {
+              $cond: [{ $eq: ['$reservations.gender.name', 'female'] }, 1, 0]
+            }
+          },
+          maleCount: {
+            $sum: {
+              $cond: [{ $eq: ['$reservations.gender.name', 'male'] }, 1, 0]
+            }
+          },
+          childCount: {
+            $sum: {
+              $cond: [{ $eq: ['$reservations.gender.name', 'child'] }, 1, 0]
+            }
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0, // Exclude _id field
+          serviceType: '$_id', // Include serviceType
+          femaleCount: 1,
+          maleCount: 1,
+          childCount: 1,
+        },
+      },
+    ];
+
+    const appointmentCounts = await this.appointmentModel.aggregate(aggregationPipeline).exec();
+
+    return {
+      appointmentCounts,
+    };
+  } catch (error) {
+    throw new HttpException(error, HttpStatus.BAD_REQUEST);
+  }
+}
+
 }

@@ -83,6 +83,14 @@ export class ChargesController {
     return this.chargesService.getTopPerformanceStats(query);
   }
 
+  @Get("services-report")
+  getAppointmentServiceTypeReport(@Req() req: ReqOptions) {
+    let query = req.query.s ? JSON.parse(req.query.s as string) : {};
+    console.log("🚀 ~ ChargesController ~ getPaymentsReport ~ query:", query)
+    if (!query.filter) query.filter = {};
+    return this.chargesService.getAppointmentServiceTypeReport(query);
+  }
+
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
   @Roles(Role.SuperAdmin, Role.Admin, Role.Cassier)
   @Get(':id')
