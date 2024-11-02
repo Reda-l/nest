@@ -8,6 +8,7 @@ import { Appointment } from 'src/core/types/interfaces/appointment.interface';
 import { uploadFirebaseFile } from 'src/core/shared/firebaseUpload';
 import { formatDate, parseDate } from 'src/core/shared/date.utils';
 import * as moment from 'moment';
+import { PointagesService } from 'src/pointages/pointages.service';
 
 @Injectable()
 export class ChargesService {
@@ -15,6 +16,7 @@ export class ChargesService {
     @InjectModel('Charge') public readonly chargeModel: Model<Charge>,
     @InjectModel('Appointment')
     public readonly appointmentModel: Model<Appointment>,
+    private pointageService : PointagesService
   ) {}
   // function to create Charge
   async create(createChargeDto: CreateChargeDto): Promise<any> {
@@ -1348,12 +1350,16 @@ export class ChargesService {
       const paidAppointmentsWithCommission =
         await this.getPaidAppointmentsWithCommission(options);
 
+      const salaries = await this.pointageService.findAllSalaryPayments(options)
+      const totalAmount = salaries.reduce((total, salary) => total + salary.amount, 0);
+
       return {
         totalNet: totalRevenuValue,
         charges: charges.length > 0 ? charges : [],
         caisse: caisseValue - banqueValue,
         banque: banqueValue,
-        commissionTrue :paidAppointmentsWithCommission.totalCommission
+        commissionTrue :paidAppointmentsWithCommission.totalCommission,
+        totalSalaries : totalAmount
       };
     } catch (error) {
       console.log('🚀 ~ ChargesService ~ getPaymentsReport ~ error:', error);

@@ -7,6 +7,7 @@ import { appointmentSchema } from '../appointments/entities/appointment.entity';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { PointagesModule } from 'src/pointages/pointages.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { extname } from 'path';
         })
       }),
     }),
+    PointagesModule
   ],
   controllers: [ChargesController],
   providers: [ChargesService],
