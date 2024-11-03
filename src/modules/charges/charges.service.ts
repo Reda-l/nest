@@ -1515,11 +1515,69 @@ export class ChargesService {
       ? totalRevenueAggregation[0].totalPrice - totalDiscount
       : 0;
 
+    // Calculate TGC (Total Card Payments) from the start of the month to the provided date
+    const totalCardPaymentsAggregation = await this.appointmentModel.aggregate([
+      {
+        $match: {
+          deleted: false,
+          date: { $gte: startOfMonth, $lte: date }, // Filter from the first of the month to the specified date
+          status: 'PAYED', // Only include PAYED appointments
+          'payment.debitPaymentMethod': 'CARD', // Only include card payments
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalCardPayments: { $sum: '$payment.debitDevise' }, // Sum the debitDevise for card payments
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalCardPayments: 1,
+        },
+      },
+    ]);
+     // Get the total card payments
+     const totalCardPayments = totalCardPaymentsAggregation.length > 0
+     ? totalCardPaymentsAggregation[0].totalCardPayments
+     : 0;
+
+     // Calculate TGD (Total Charges) from the start of the month to the specified date
+    const totalChargesAggregation = await this.chargeModel.aggregate([
+      {
+        $match: {
+          deleted: false,
+          date: { $gte: startOfMonth, $lte: date }, // Filter from the first of the month to the specified date
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalCharges: { $sum: '$price' }, // Sum the price for all charges
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalCharges: 1,
+        },
+      },
+    ]);
+
+    // Get the total charges
+    const totalCharges = totalChargesAggregation.length > 0
+      ? totalChargesAggregation[0].totalCharges
+      : 0;
+
+
       return {
         reservations: appointments,
         depenses: charges,
         commissions,
-        tgr : totalRevenue
+        tgr : totalRevenue,
+        tgc : totalCardPayments,
+        tgd : totalCharges
       };
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
