@@ -16,7 +16,7 @@ export class ChargesService {
     @InjectModel('Charge') public readonly chargeModel: Model<Charge>,
     @InjectModel('Appointment')
     public readonly appointmentModel: Model<Appointment>,
-    private pointageService : PointagesService
+    private pointageService: PointagesService,
   ) {}
   // function to create Charge
   async create(createChargeDto: CreateChargeDto): Promise<any> {
@@ -849,7 +849,7 @@ export class ChargesService {
           $gte: startDate,
           $lte: endDate,
         },
-        status : 'PAYED'
+        status: 'PAYED',
       })
       .populate('discount');
 
@@ -893,7 +893,7 @@ export class ChargesService {
       options.filter.startDate = parseDate(options.filter.startDate);
       // Parse and format end date to ISODate
       options.filter.endDate = parseDate(options.filter.endDate);
-  
+
       let currentDate = new Date(options.filter.startDate);
       const totalsPerDay: any = [];
       let _totalRevenue = 0;
@@ -903,7 +903,7 @@ export class ChargesService {
       let _totalBeldiRevenue = 0; // Initialize total Beldi revenue
       let _totalCommissionTrue = 0;
       let _totalNet = 0; // Initialize total net profit
-  
+
       // Loop until the current date is greater than the end date
       while (currentDate <= options.filter.endDate) {
         const totalChargesPerDay = await this.chargeModel.aggregate([
@@ -926,7 +926,7 @@ export class ChargesService {
             },
           },
         ]);
-  
+
         const totalRevenuePerDay = await this.appointmentModel.aggregate([
           {
             $match: {
@@ -954,8 +954,11 @@ export class ChargesService {
             },
           },
         ]);
-        console.log("🚀 ~ ChargesService ~ getSpaRevenus ~ totalRevenuePerDay:", totalRevenuePerDay)
-  
+        console.log(
+          '🚀 ~ ChargesService ~ getSpaRevenus ~ totalRevenuePerDay:',
+          totalRevenuePerDay,
+        );
+
         const totalBeldiRevenuePerDay = await this.appointmentModel.aggregate([
           {
             $match: {
@@ -988,7 +991,7 @@ export class ChargesService {
             },
           },
         ]);
-  
+
         const totalCreditPerDay = await this.appointmentModel
           .aggregate([
             {
@@ -1013,75 +1016,102 @@ export class ChargesService {
             },
           ])
           .exec();
-  
+
         // Create start and end of the day in UTC
-        const startOfDay = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate()));
-        const endOfDay = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate(), 23, 59, 59, 999));
-  
-        const totalCommissionTruePerDay = await this.appointmentModel.aggregate([
-          {
-            $match: {
-              deleted: false,
-              'commission.payed': true,
-              'commission.date': {
-                $gte: startOfDay,
-                $lte: endOfDay,
+        const startOfDay = new Date(
+          Date.UTC(
+            currentDate.getUTCFullYear(),
+            currentDate.getUTCMonth(),
+            currentDate.getUTCDate(),
+          ),
+        );
+        const endOfDay = new Date(
+          Date.UTC(
+            currentDate.getUTCFullYear(),
+            currentDate.getUTCMonth(),
+            currentDate.getUTCDate(),
+            23,
+            59,
+            59,
+            999,
+          ),
+        );
+
+        const totalCommissionTruePerDay = await this.appointmentModel.aggregate(
+          [
+            {
+              $match: {
+                deleted: false,
+                'commission.payed': true,
+                'commission.date': {
+                  $gte: startOfDay,
+                  $lte: endOfDay,
+                },
+                status: 'PAYED',
               },
-              status: 'PAYED',
             },
-          },
-          {
-            $group: {
-              _id: null,
-              total: { $sum: '$commission.value' },
+            {
+              $group: {
+                _id: null,
+                total: { $sum: '$commission.value' },
+              },
             },
-          },
-          {
-            $project: {
-              _id: 0,
-              total: 1,
+            {
+              $project: {
+                _id: 0,
+                total: 1,
+              },
             },
-          },
-        ]);
-  
+          ],
+        );
+
         const _totalRevenuePerDay =
           totalRevenuePerDay.length > 0
             ? totalRevenuePerDay[0].totalPrice -
               (await this.getTotalDiscount(currentDate, currentDate))
             : 0;
-            console.log("🚀 ~ ChargesService ~ getSpaRevenus ~ _totalRevenuePerDay:", _totalRevenuePerDay)
+        console.log(
+          '🚀 ~ ChargesService ~ getSpaRevenus ~ _totalRevenuePerDay:',
+          _totalRevenuePerDay,
+        );
 
         const _totalChargesPerDay =
           totalChargesPerDay.length > 0 ? totalChargesPerDay[0].totalPrice : 0;
         const _totalProfitPerDay = _totalRevenuePerDay - _totalChargesPerDay;
         const _totalCreditPerDay =
           totalCreditPerDay.length > 0 ? totalCreditPerDay[0].total : 0; // Extract credit total
-  
+
         const _totalBeldiRevenuePerDay =
           totalBeldiRevenuePerDay.length > 0
             ? totalBeldiRevenuePerDay[0].totalPrice
             : 0; // Calculate total Beldi revenue per day
-  
+
         const _totalCommissionTruePerDay =
           totalCommissionTruePerDay.length > 0
             ? totalCommissionTruePerDay[0].total
             : 0;
-  
+
         const _netPerDay =
           _totalRevenuePerDay -
           _totalChargesPerDay -
           _totalCommissionTruePerDay;
-  
+
         _totalRevenue += _totalRevenuePerDay;
-        console.log("🚀 ~ ChargesService ~ getSpaRevenus ~ _totalRevenue:", _totalRevenue)
+        console.log(
+          '🚀 ~ ChargesService ~ getSpaRevenus ~ _totalRevenue:',
+          _totalRevenue,
+        );
         _totalCharges += _totalChargesPerDay;
         _totalProfit += _totalProfitPerDay;
         _totalCredits += _totalCreditPerDay; // Add credit total to overall credits
         _totalBeldiRevenue += _totalBeldiRevenuePerDay;
-        console.log("🚀 ~ ChargesService ~ getSpaRevenus ~ _totalBeldiRevenue:", _totalBeldiRevenue)
+        console.log(
+          '🚀 ~ ChargesService ~ getSpaRevenus ~ _totalBeldiRevenue:',
+          _totalBeldiRevenue,
+        );
         _totalCommissionTrue += _totalCommissionTruePerDay;
         _totalNet += _netPerDay; // Add daily net profit to the total net profit
-  
+
         totalsPerDay.push({
           date: formatDate(currentDate),
           beldi: _totalBeldiRevenuePerDay,
@@ -1092,11 +1122,11 @@ export class ChargesService {
           credits: _totalCreditPerDay, // Add credits to daily totals
           commissionTrue: _totalCommissionTruePerDay,
         });
-  
+
         // Increment the current date by one day
         currentDate.setDate(currentDate.getDate() + 1);
       }
-  
+
       return {
         data: totalsPerDay,
         totalBeldi: _totalBeldiRevenue,
@@ -1110,7 +1140,6 @@ export class ChargesService {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
-  
 
   // function for report - Charges grouped with total
   async getChargesReport(options) {
@@ -1350,16 +1379,21 @@ export class ChargesService {
       const paidAppointmentsWithCommission =
         await this.getPaidAppointmentsWithCommission(options);
 
-      const salaries = await this.pointageService.findAllSalaryPayments(options)
-      const totalAmount = salaries.reduce((total, salary) => total + salary.amount, 0);
+      const salaries = await this.pointageService.findAllSalaryPayments(
+        options,
+      );
+      const totalAmount = salaries.reduce(
+        (total, salary) => total + salary.amount,
+        0,
+      );
 
       return {
         totalNet: totalRevenuValue,
         charges: charges.length > 0 ? charges : [],
         caisse: caisseValue - banqueValue,
         banque: banqueValue,
-        commissionTrue :paidAppointmentsWithCommission.totalCommission,
-        totalSalaries : totalAmount
+        commissionTrue: paidAppointmentsWithCommission.totalCommission,
+        totalSalaries: totalAmount,
       };
     } catch (error) {
       console.log('🚀 ~ ChargesService ~ getPaymentsReport ~ error:', error);
@@ -1367,91 +1401,85 @@ export class ChargesService {
     }
   }
 
-  // Function to get appointment counts grouped by service type within a date range
-// Function to get appointment counts and total price grouped by service type within a date range, only for PAYED appointments
-async getAppointmentServiceTypeReport(options) {
-  try {
-    // Check if required date filters are provided
-    if (!options.filter?.startDate || !options.filter?.endDate) {
-      throw new HttpException('Filter dates are missing', HttpStatus.BAD_REQUEST);
-    }
+  // Function to retrieve PAYED appointments for a specific date
+  async getAppointmentsByDate(options) {
+    try {
+      // Check if the required date filter is provided
+      if (!options.filter?.date) {
+        throw new HttpException('Date is missing', HttpStatus.BAD_REQUEST);
+      }
 
-    // Parse and format start and end dates to ISODate
-    const startDate = parseDate(options.filter.startDate);
-    const endDate = parseDate(options.filter.endDate);
+      // Parse the provided date to ISO format
+      const date = parseDate(options.filter.date);
 
-    const aggregationPipeline = [
-      {
-        $match: {
+      const appointments = await this.appointmentModel
+        .find({
           deleted: false,
-          status: 'PAYED', // Filter by PAYED status
-          date: { $gte: startDate, $lte: endDate }, // Filter by date range
-        },
-      },
-      { 
-        $unwind: '$reservations' // Unwind the reservations array to process each reservation separately
-      },
-      { 
-        $unwind: '$reservations.services' // Unwind the services array to process each service separately
-      },
-      {
-        $group: {
-          _id: '$reservations.services.type', // Group by service type
-          femaleCount: {
-            $sum: {
-              $cond: [{ $eq: ['$reservations.gender.name', 'female'] }, 1, 0]
-            }
-          },
-          femaleTotalPrice: {
-            $sum: {
-              $cond: [{ $eq: ['$reservations.gender.name', 'female'] }, '$reservations.services.price', 0]
-            }
-          },
-          maleCount: {
-            $sum: {
-              $cond: [{ $eq: ['$reservations.gender.name', 'male'] }, 1, 0]
-            }
-          },
-          maleTotalPrice: {
-            $sum: {
-              $cond: [{ $eq: ['$reservations.gender.name', 'male'] }, '$reservations.services.price', 0]
-            }
-          },
-          childCount: {
-            $sum: {
-              $cond: [{ $eq: ['$reservations.gender.name', 'child'] }, 1, 0]
-            }
-          },
-          childTotalPrice: {
-            $sum: {
-              $cond: [{ $eq: ['$reservations.gender.name', 'child'] }, '$reservations.services.price', 0]
-            }
-          },
-        },
-      },
-      {
-        $project: {
-          _id: 0, // Exclude _id field
-          serviceType: '$_id', // Include serviceType
-          femaleCount: 1,
-          femaleTotalPrice: 1,
-          maleCount: 1,
-          maleTotalPrice: 1,
-          childCount: 1,
-          childTotalPrice: 1,
-        },
-      },
-    ];
+          status: 'PAYED', // Only include PAYED appointments
+          date: date, // Filter by the specific date
+        })
+        .exec();
 
-    const appointmentCounts = await this.appointmentModel.aggregate(aggregationPipeline).exec();
+      // get charges / depenses
+      const chargesAggregationPipeline = [
+        {
+          $match: {
+            deleted: false,
+            date: date, // Filter by specific date
+          },
+        },
+        {
+          $group: {
+            _id: {
+              name: '$name', // Group by name
+              type: '$type', // Include type in the grouping
+            },
+            totalPrice: { $sum: '$price' }, // Calculate total price for each group
+          },
+        },
+        {
+          $project: {
+            _id: 0, // Exclude _id field
+            name: { $concat: ['(', '$_id.name', ')', ' ', '$_id.type'] }, // Format name as (type)name
+            totalPrice: 1, // Include totalPrice field
+          },
+        },
+      ];
 
-    return {
-      appointmentCounts,
-    };
-  } catch (error) {
-    throw new HttpException(error, HttpStatus.BAD_REQUEST);
+      const charges = await this.chargeModel
+        .aggregate(chargesAggregationPipeline)
+        .exec();
+
+      // get the commissions of payed appointments
+      const commissionAggregationPipeline = [
+        {
+          $match: {
+            deleted: false,
+            status: 'PAYED',
+            'commission.payed': true,
+            'commission.date': date, // Filter by the specified date
+          },
+        },
+        {
+          $project: {
+            _id: 0, // Exclude the _id field if not needed
+            commissionValue: '$commission.value', // Include the commission value
+            source: '$source', // Include the source field
+          },
+        },
+      ];
+
+      const commissions = await this.appointmentModel
+        .aggregate(commissionAggregationPipeline)
+        .exec();
+
+      return {
+        reservations: appointments,
+        depenses: charges,
+        commissions,
+      };
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
   }
-}
-
-
 }

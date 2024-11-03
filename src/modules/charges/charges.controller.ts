@@ -84,11 +84,11 @@ export class ChargesController {
   }
 
   @Get("services-report")
-  getAppointmentServiceTypeReport(@Req() req: ReqOptions) {
+  getAppointmentsByDate(@Req() req: ReqOptions) {
     let query = req.query.s ? JSON.parse(req.query.s as string) : {};
     console.log("🚀 ~ ChargesController ~ getPaymentsReport ~ query:", query)
     if (!query.filter) query.filter = {};
-    return this.chargesService.getAppointmentServiceTypeReport(query);
+    return this.chargesService.getAppointmentsByDate(query);
   }
 
   @UseGuards(AuthJwtAuthGuard, RolesGuard)
