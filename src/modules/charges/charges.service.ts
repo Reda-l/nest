@@ -1412,6 +1412,10 @@ export class ChargesService {
       // Parse the provided date to ISO format
       const date = parseDate(options.filter.date);
 
+      const startOfMonth = new Date(date);
+      startOfMonth.setDate(1); // Set to the first day of the month
+      console.log("🚀 ~ ChargesService ~ getAppointmentsByDate ~ startOfMonth:", startOfMonth)
+
       const appointments = await this.appointmentModel
         .find({
           deleted: false,
@@ -1473,10 +1477,49 @@ export class ChargesService {
         .aggregate(commissionAggregationPipeline)
         .exec();
 
+      // calculate the Total Grand
+      // Calculate TGR from the start of the month to the provided date
+    const totalRevenueAggregation = await this.appointmentModel.aggregate([
+      {
+        $match: {
+          deleted: false,
+          date: { $gte: startOfMonth, $lte: date }, // Filter from the first of the month to the specified date
+          status: 'PAYED', // Only include PAYED appointments
+        },
+      },
+      {
+        $unwind: '$reservations',
+      },
+      {
+        $unwind: '$reservations.services',
+      },
+      {
+        $group: {
+          _id: null,
+          totalPrice: { $sum: '$reservations.services.price' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalPrice: 1,
+        },
+      },
+    ]);
+
+    // Calculate the total discount for the range (from start of the month to date)
+    const totalDiscount = await this.getTotalDiscount(startOfMonth, date);
+
+    // Final TGR calculation
+    const totalRevenue = totalRevenueAggregation.length > 0
+      ? totalRevenueAggregation[0].totalPrice - totalDiscount
+      : 0;
+
       return {
         reservations: appointments,
         depenses: charges,
         commissions,
+        tgr : totalRevenue
       };
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
