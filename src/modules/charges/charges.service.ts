@@ -1479,11 +1479,7 @@ export class ChargesService {
       const commissions = await this.appointmentModel
         .aggregate(commissionAggregationPipeline)
         .exec();
-      // Calculate the total commission value
-      const totalCommissionValue = commissions.reduce(
-        (sum, commission) => sum + commission.commissionValue,
-        0,
-      );
+     
 
       // calculate the Total Grand
       // Calculate TGR from the start of the month to the provided date
@@ -1581,6 +1577,36 @@ export class ChargesService {
         totalChargesAggregation.length > 0
           ? totalChargesAggregation[0].totalCharges
           : 0;
+
+
+      // Get commissions of PAYED appointments from start of the month to the specified date
+    const commissionTGAggregationPipeline = [
+      {
+        $match: {
+          deleted: false,
+          status: 'PAYED',
+          'commission.payed': true,
+          'commission.date': { $gte: startOfMonth, $lte: date }, // Filter by date range
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          commissionValue: '$commission.value', // Include commission value
+          source: '$source', // Include source
+        },
+      },
+    ];
+
+    const commissionTG = await this.appointmentModel
+      .aggregate(commissionTGAggregationPipeline)
+      .exec();
+
+    // Calculate total commission value in TypeScript
+    const totalCommissionValue = commissionTG.reduce(
+      (sum, commission) => sum + commission.commissionValue,
+      0,
+    );
 
       return {
         reservations: appointments,
