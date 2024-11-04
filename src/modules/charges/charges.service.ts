@@ -1414,7 +1414,10 @@ export class ChargesService {
 
       const startOfMonth = new Date(date);
       startOfMonth.setDate(1); // Set to the first day of the month
-      console.log("🚀 ~ ChargesService ~ getAppointmentsByDate ~ startOfMonth:", startOfMonth)
+      console.log(
+        '🚀 ~ ChargesService ~ getAppointmentsByDate ~ startOfMonth:',
+        startOfMonth,
+      );
 
       const appointments = await this.appointmentModel
         .find({
@@ -1476,108 +1479,116 @@ export class ChargesService {
       const commissions = await this.appointmentModel
         .aggregate(commissionAggregationPipeline)
         .exec();
+      // Calculate the total commission value
+      const totalCommissionValue = commissions.reduce(
+        (sum, commission) => sum + commission.commissionValue,
+        0,
+      );
 
       // calculate the Total Grand
       // Calculate TGR from the start of the month to the provided date
-    const totalRevenueAggregation = await this.appointmentModel.aggregate([
-      {
-        $match: {
-          deleted: false,
-          date: { $gte: startOfMonth, $lte: date }, // Filter from the first of the month to the specified date
-          status: 'PAYED', // Only include PAYED appointments
+      const totalRevenueAggregation = await this.appointmentModel.aggregate([
+        {
+          $match: {
+            deleted: false,
+            date: { $gte: startOfMonth, $lte: date }, // Filter from the first of the month to the specified date
+            status: 'PAYED', // Only include PAYED appointments
+          },
         },
-      },
-      {
-        $unwind: '$reservations',
-      },
-      {
-        $unwind: '$reservations.services',
-      },
-      {
-        $group: {
-          _id: null,
-          totalPrice: { $sum: '$reservations.services.price' },
+        {
+          $unwind: '$reservations',
         },
-      },
-      {
-        $project: {
-          _id: 0,
-          totalPrice: 1,
+        {
+          $unwind: '$reservations.services',
         },
-      },
-    ]);
+        {
+          $group: {
+            _id: null,
+            totalPrice: { $sum: '$reservations.services.price' },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            totalPrice: 1,
+          },
+        },
+      ]);
 
-    // Calculate the total discount for the range (from start of the month to date)
-    const totalDiscount = await this.getTotalDiscount(startOfMonth, date);
+      // Calculate the total discount for the range (from start of the month to date)
+      const totalDiscount = await this.getTotalDiscount(startOfMonth, date);
 
-    // Final TGR calculation
-    const totalRevenue = totalRevenueAggregation.length > 0
-      ? totalRevenueAggregation[0].totalPrice - totalDiscount
-      : 0;
+      // Final TGR calculation
+      const totalRevenue =
+        totalRevenueAggregation.length > 0
+          ? totalRevenueAggregation[0].totalPrice - totalDiscount
+          : 0;
 
-    // Calculate TGC (Total Card Payments) from the start of the month to the provided date
-    const totalCardPaymentsAggregation = await this.appointmentModel.aggregate([
-      {
-        $match: {
-          deleted: false,
-          date: { $gte: startOfMonth, $lte: date }, // Filter from the first of the month to the specified date
-          status: 'PAYED', // Only include PAYED appointments
-          'payment.debitPaymentMethod': 'CARD', // Only include card payments
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalCardPayments: { $sum: '$payment.debitDevise' }, // Sum the debitDevise for card payments
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          totalCardPayments: 1,
-        },
-      },
-    ]);
-     // Get the total card payments
-     const totalCardPayments = totalCardPaymentsAggregation.length > 0
-     ? totalCardPaymentsAggregation[0].totalCardPayments
-     : 0;
+      // Calculate TGC (Total Card Payments) from the start of the month to the provided date
+      const totalCardPaymentsAggregation =
+        await this.appointmentModel.aggregate([
+          {
+            $match: {
+              deleted: false,
+              date: { $gte: startOfMonth, $lte: date }, // Filter from the first of the month to the specified date
+              status: 'PAYED', // Only include PAYED appointments
+              'payment.debitPaymentMethod': 'CARD', // Only include card payments
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              totalCardPayments: { $sum: '$payment.debitDevise' }, // Sum the debitDevise for card payments
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              totalCardPayments: 1,
+            },
+          },
+        ]);
+      // Get the total card payments
+      const totalCardPayments =
+        totalCardPaymentsAggregation.length > 0
+          ? totalCardPaymentsAggregation[0].totalCardPayments
+          : 0;
 
-     // Calculate TGD (Total Charges) from the start of the month to the specified date
-    const totalChargesAggregation = await this.chargeModel.aggregate([
-      {
-        $match: {
-          deleted: false,
-          date: { $gte: startOfMonth, $lte: date }, // Filter from the first of the month to the specified date
+      // Calculate TGD (Total Charges) from the start of the month to the specified date
+      const totalChargesAggregation = await this.chargeModel.aggregate([
+        {
+          $match: {
+            deleted: false,
+            date: { $gte: startOfMonth, $lte: date }, // Filter from the first of the month to the specified date
+          },
         },
-      },
-      {
-        $group: {
-          _id: null,
-          totalCharges: { $sum: '$price' }, // Sum the price for all charges
+        {
+          $group: {
+            _id: null,
+            totalCharges: { $sum: '$price' }, // Sum the price for all charges
+          },
         },
-      },
-      {
-        $project: {
-          _id: 0,
-          totalCharges: 1,
+        {
+          $project: {
+            _id: 0,
+            totalCharges: 1,
+          },
         },
-      },
-    ]);
+      ]);
 
-    // Get the total charges
-    const totalCharges = totalChargesAggregation.length > 0
-      ? totalChargesAggregation[0].totalCharges
-      : 0;
-
+      // Get the total charges
+      const totalCharges =
+        totalChargesAggregation.length > 0
+          ? totalChargesAggregation[0].totalCharges
+          : 0;
 
       return {
         reservations: appointments,
         depenses: charges,
         commissions,
-        tgr : totalRevenue,
-        tgc : totalCardPayments,
-        tgd : totalCharges
+        tgr: totalRevenue,
+        tgc: totalCardPayments,
+        tgd: totalCharges + totalCommissionValue,
       };
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
