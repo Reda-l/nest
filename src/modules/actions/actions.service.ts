@@ -4,6 +4,7 @@ import { UpdateActionDto } from './dto/update-action.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Action } from 'src/core/types/interfaces/action.interface';
+import { parseDate } from 'src/core/shared/date.utils';
 
 @Injectable()
 export class ActionsService {
@@ -31,6 +32,21 @@ export class ActionsService {
   //function to get All actions
   async findAll(options): Promise<any> {
     options.filter.deleted = false;
+
+     // Parse date strings in DD-MM-YYYY format into Date objects for created_at
+     if (options.filter?.created_at) {
+      for (const operator in options.filter.created_at) {
+        if (options.filter.created_at.hasOwnProperty(operator)) {
+          if (['$gte', '$gt', '$lte', '$lt'].includes(operator)) {
+            options.filter.created_at[operator] = parseDate(
+              options.filter.created_at[operator],
+            );
+          }
+        }
+      }
+    }
+
+
     const query = this.actionModel.find(options.filter).populate({
       path: 'user',
       select: 'firstname lastname role email'

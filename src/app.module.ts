@@ -15,6 +15,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ActionsInterceptor } from './core/interceptors/actions.interceptor';
 import { PointagesModule } from './pointages/pointages.module';
 import { SalaryModule } from './modules/salary/salary.module';
+import { SavingsModule } from './modules/savings/savings.module';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -42,6 +43,7 @@ dotenv.config();
     ActionsModule,
     PointagesModule,
     SalaryModule,
+    SavingsModule,
   ],
   controllers: [AppController],
   providers: [AppService,    {
