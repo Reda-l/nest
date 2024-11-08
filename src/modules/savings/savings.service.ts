@@ -17,7 +17,10 @@ export class SavingService {
   async createInitialSaving(): Promise<Saving> {
     const existingSaving = await this.savingModel.findOne().exec();
     if (existingSaving) {
-      throw new HttpException('Saving record already exists', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Saving record already exists',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     const saving = new this.savingModel({ balance: 0 }); // Initial balance can be set to any value
@@ -36,10 +39,18 @@ export class SavingService {
   }
 
   // Add money to the balance
-  async addMoney(amount: number, userId: string): Promise<Saving> {
-    console.log("🚀 ~ SavingService ~ addMoney ~ userId:", userId)
+  async addMoney(
+    amount: number,
+    userId: string,
+    name?: string,
+    reason?: string,
+    date?: Date,
+  ): Promise<Saving> {
     if (amount <= 0) {
-      throw new HttpException('Amount to add must be greater than zero', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Amount to add must be greater than zero',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     let saving = await this.savingModel.findOne().exec();
@@ -55,7 +66,7 @@ export class SavingService {
     await this.actionService.create({
       type: 'add_money',
       module: 'saving',
-      entity: { amount, userId },
+      entity: { amount, userId, name, reason, date },
       user: userId,
     });
 
@@ -63,9 +74,14 @@ export class SavingService {
   }
 
   // Deduct money from the balance
-  async deductMoney(amount: number, userId: string): Promise<Saving> {
+  async deductMoney(amount: number, userId: string, name?: string,
+    reason?: string,
+    date?: Date): Promise<Saving> {
     if (amount <= 0) {
-      throw new HttpException('Amount to deduct must be greater than zero', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Amount to deduct must be greater than zero',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     let saving = await this.savingModel.findOne().exec();
@@ -85,7 +101,7 @@ export class SavingService {
     await this.actionService.create({
       type: 'deduct_money',
       module: 'saving',
-      entity: { amount, userId },
+      entity: { amount, userId, name, reason, date },
       user: userId,
     });
 
