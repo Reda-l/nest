@@ -46,6 +46,8 @@ export class SavingService {
     reason?: string,
     date?: Date,
   ): Promise<any> {
+    // Convert amount to a number if it's a string
+  amount = parseFloat(amount.toString());
     if (amount <= 0) {
       throw new HttpException(
         'Amount to add must be greater than zero',
@@ -77,6 +79,8 @@ export class SavingService {
   async deductMoney(amount: number, userId: string, name?: string,
     reason?: string,
     date?: Date): Promise<any> {
+      // Convert amount to a number if it's a string
+  amount = parseFloat(amount.toString());
     if (amount <= 0) {
       throw new HttpException(
         'Amount to deduct must be greater than zero',
