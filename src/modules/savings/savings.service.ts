@@ -45,7 +45,7 @@ export class SavingService {
     name?: string,
     reason?: string,
     date?: Date,
-  ): Promise<Saving> {
+  ): Promise<any> {
     if (amount <= 0) {
       throw new HttpException(
         'Amount to add must be greater than zero',
@@ -63,20 +63,20 @@ export class SavingService {
     await saving.save();
 
     // Track the action (add money)
-    await this.actionService.create({
+    const action = await this.actionService.create({
       type: 'add_money',
       module: 'saving',
       entity: { amount, userId, name, reason, date },
       user: userId,
     });
 
-    return saving;
+    return action;
   }
 
   // Deduct money from the balance
   async deductMoney(amount: number, userId: string, name?: string,
     reason?: string,
-    date?: Date): Promise<Saving> {
+    date?: Date): Promise<any> {
     if (amount <= 0) {
       throw new HttpException(
         'Amount to deduct must be greater than zero',
@@ -98,13 +98,13 @@ export class SavingService {
     await saving.save();
 
     // Track the action (deduct money)
-    await this.actionService.create({
+    const action = await this.actionService.create({
       type: 'deduct_money',
       module: 'saving',
       entity: { amount, userId, name, reason, date },
       user: userId,
     });
 
-    return saving;
+    return action;
   }
 }
